@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fakepay 3-D Secure</title>
+  <style>
+    :root { color-scheme: light dark; --bg: #f6f7f9; --card: #fff; --ink: #1c2330; --muted: #5b6474; --ok: #0b7a4b; --bad: #b42318; }
+    @media (prefers-color-scheme: dark) { :root { --bg: #11151c; --card: #1a202a; --ink: #e8ecf2; --muted: #9aa4b5; } }
+    body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: var(--bg); color: var(--ink); font: 16px/1.5 system-ui, sans-serif; }
+    main { width: min(420px, calc(100% - 32px)); background: var(--card); border-radius: 14px; padding: 28px; box-shadow: 0 10px 30px rgb(0 0 0 / 12%); }
+    h1 { font-size: 20px; margin: 0 0 4px; }
+    p { color: var(--muted); margin: 0 0 20px; }
+    dl { display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; margin: 0 0 24px; }
+    dt { color: var(--muted); }
+    form { display: flex; gap: 12px; }
+    button { flex: 1; border: 0; border-radius: 10px; padding: 12px; font: inherit; font-weight: 600; color: #fff; cursor: pointer; }
+    .approve { background: var(--ok); } .decline { background: var(--bad); }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Fakepay bank verification</h1>
+    <p>Sandbox simulator. No real card is charged.</p>
+    <dl>
+      <dt>Amount</dt><dd>{{ charge.currency }} {{ charge.amount }}</dd>
+      <dt>Charge</dt><dd>{{ charge.id }}</dd>
+      <dt>Status</dt><dd>{{ charge.status }}</dd>
+    </dl>
+    {% if charge.status == "requires_action" %}
+    <form method="post">
+      <button class="approve" name="outcome" value="approve">Approve</button>
+      <button class="decline" name="outcome" value="decline">Decline</button>
+    </form>
+    {% else %}
+    <p><a href="{{ charge.return_url }}">Return to the store</a></p>
+    {% endif %}
+  </main>
+</body>
+</html>
