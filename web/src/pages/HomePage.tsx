@@ -1,5 +1,6 @@
 import { Link } from "react-router";
 
+import { ThemeToggle } from "../components/ThemeToggle";
 import { Badge } from "../components/ui";
 import { DEMO_STORES } from "../lib/stores";
 
@@ -13,7 +14,10 @@ const HIGHLIGHTS = [
 export function HomePage() {
   return (
     <div className="mx-auto max-w-4xl px-4 py-12">
-      <p className="text-sm font-semibold uppercase tracking-widest text-accent">E-commerce Platform</p>
+      <div className="flex items-center justify-between gap-4">
+        <p className="text-sm font-semibold uppercase tracking-widest text-accent">E-commerce Platform</p>
+        <ThemeToggle />
+      </div>
       <h1 className="mt-2 text-4xl font-bold tracking-tight sm:text-5xl">One platform, many stores.</h1>
       <p className="mt-4 max-w-2xl text-lg text-muted">
         Pick a store to shop as a guest or sign in with a demo account. Everything you see comes from the cart API.

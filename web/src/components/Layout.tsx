@@ -6,6 +6,7 @@ import { apiFor, unwrap } from "../api/client";
 import { useCart, useStoreSettings } from "../api/hooks";
 import { useSession } from "../lib/session-context";
 import { demoStore, type DemoAccount } from "../lib/stores";
+import { ThemeToggle } from "./ThemeToggle";
 import { Badge, Button, ProblemNotice } from "./ui";
 
 export function Layout({ children }: { children: ReactNode }) {
@@ -55,6 +56,7 @@ export function Layout({ children }: { children: ReactNode }) {
             </span>
           ) : null}
           <div className="ml-auto flex items-center gap-3">
+            <ThemeToggle />
             {session.token ? (
               <div className="flex items-center gap-3 text-sm">
                 <span className="text-muted">

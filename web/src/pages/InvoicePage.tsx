@@ -32,19 +32,19 @@ function Bilingual({ en, ar, className = "" }: { en: string; ar: string; classNa
 
 function Field({ en, ar, children }: { en: string; ar: string; children: ReactNode }) {
   return (
-    <div className="border-b border-neutral-200 py-1.5 last:border-0">
-      <Bilingual en={en} ar={ar} className="text-[11px] font-semibold uppercase tracking-wide text-neutral-500" />
-      <div className="mt-0.5 text-sm text-neutral-900">{children}</div>
+    <div className="border-b border-line py-1.5 last:border-0">
+      <Bilingual en={en} ar={ar} className="text-[11px] font-semibold uppercase tracking-wide text-muted" />
+      <div className="mt-0.5 text-sm text-ink">{children}</div>
     </div>
   );
 }
 
 function TotalRow({ en, ar, amount, grand = false }: { en: string; ar: string; amount: string; grand?: boolean }) {
   return (
-    <div className={`flex items-start justify-between gap-4 ${grand ? "border-t-2 border-neutral-900 pt-2 text-base font-bold" : ""}`}>
+    <div className={`flex items-start justify-between gap-4 ${grand ? "border-t-2 border-ink pt-2 text-base font-bold" : ""}`}>
       <dt>
         <span className="block">{en}</span>
-        <span lang="ar" dir="rtl" className="block text-left text-xs font-normal text-neutral-500">
+        <span lang="ar" dir="rtl" className="block text-left text-xs font-normal text-muted">
           {ar}
         </span>
       </dt>
@@ -81,11 +81,11 @@ function InvoiceDocument({ invoice }: { invoice: Invoice }) {
   ];
 
   return (
-    <article className="mx-auto max-w-[820px] rounded-2xl border border-neutral-200 bg-white p-8 text-neutral-900 shadow-sm print:max-w-none print:rounded-none print:border-0 print:p-0 print:shadow-none">
-      <header className="flex flex-col gap-6 border-b-2 border-neutral-900 pb-6 sm:flex-row sm:items-start sm:justify-between">
+    <article className="mx-auto max-w-[820px] rounded-2xl border border-line bg-surface p-8 text-ink shadow-sm print:max-w-none print:rounded-none print:border-0 print:p-0 print:shadow-none">
+      <header className="flex flex-col gap-6 border-b-2 border-ink pb-6 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="text-xl font-bold">{invoice.seller.legal_name}</p>
-          <p className="mt-1 text-sm text-neutral-600">{addressLines(invoice.seller)}</p>
+          <p className="mt-1 text-sm text-muted">{addressLines(invoice.seller)}</p>
           <p className="mt-2 text-sm">
             VAT <span className="font-mono">{invoice.seller.vat_number}</span> · CR{" "}
             <span className="font-mono">{invoice.seller.cr_number}</span>
@@ -144,11 +144,11 @@ function InvoiceDocument({ invoice }: { invoice: Invoice }) {
       <div className="overflow-x-auto">
         <table className="w-full border-collapse text-sm">
           <thead>
-            <tr className="border-y border-neutral-900 bg-neutral-100">
+            <tr className="border-y border-ink bg-paper">
               {columns.map(([en, ar, align]) => (
                 <th key={en} className={`px-2 py-2 font-semibold ${align}`}>
                   <span className="block">{en}</span>
-                  <span lang="ar" dir="rtl" className="block text-xs font-normal text-neutral-600">
+                  <span lang="ar" dir="rtl" className="block text-xs font-normal text-muted">
                     {ar}
                   </span>
                 </th>
@@ -157,14 +157,14 @@ function InvoiceDocument({ invoice }: { invoice: Invoice }) {
           </thead>
           <tbody>
             {invoice.lines.map((line, index) => (
-              <tr key={`${line.name}-${index}`} className="border-b border-neutral-200">
+              <tr key={`${line.name}-${index}`} className="border-b border-line">
                 <td className="px-2 py-2">{line.name}</td>
                 <td className="px-2 py-2 text-right tabular">{line.quantity}</td>
                 <td className="px-2 py-2 text-right">{money(line.unit_price)}</td>
                 <td className="px-2 py-2 text-right">{money(line.net)}</td>
                 <td className="px-2 py-2 text-right">
                   {money(line.vat)}
-                  <span className="block text-xs text-neutral-500">{Number(line.vat_rate)}%</span>
+                  <span className="block text-xs text-muted">{Number(line.vat_rate)}%</span>
                 </td>
                 <td className="px-2 py-2 text-right font-semibold">{money(line.total)}</td>
               </tr>
@@ -175,10 +175,10 @@ function InvoiceDocument({ invoice }: { invoice: Invoice }) {
 
       <section className="mt-6 flex flex-col-reverse gap-6 sm:flex-row sm:items-end sm:justify-between">
         <div className="flex items-end gap-4">
-          <div className="rounded-lg border border-neutral-200 p-2">
+          <div className="rounded-lg border border-line bg-white p-2">
             <QRCodeSVG value={invoice.qr_code} size={132} level="M" />
           </div>
-          <div className="max-w-44 text-xs text-neutral-500">
+          <div className="max-w-44 text-xs text-muted">
             <p>Scan with the ZATCA app to verify this invoice.</p>
             <p lang="ar" dir="rtl" className="mt-1">
               امسح الرمز للتحقق من الفاتورة عبر تطبيق هيئة الزكاة والضريبة والجمارك.
@@ -192,7 +192,7 @@ function InvoiceDocument({ invoice }: { invoice: Invoice }) {
         </dl>
       </section>
 
-      <footer className="mt-8 border-t border-neutral-200 pt-4 text-[11px] text-neutral-500">
+      <footer className="mt-8 border-t border-line pt-4 text-[11px] text-muted">
         <p className="break-all font-mono">UUID {invoice.uuid}</p>
         <p className="break-all font-mono">Hash {invoice.invoice_hash}</p>
       </footer>
