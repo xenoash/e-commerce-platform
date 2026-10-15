@@ -536,6 +536,10 @@ export interface components {
         CouponReason: {
             code: string;
             detail: string;
+            /** @description Values behind the reason, for example remaining or allowed_cities. */
+            data: {
+                [key: string]: unknown;
+            };
         };
         CreatedCart: {
             /** Format: uuid */
@@ -737,6 +741,7 @@ export interface components {
             product_id: string | null;
             sku: string;
             name: string;
+            name_ar: string;
             quantity: number;
             /** Format: decimal */
             unit_price: string;
@@ -818,6 +823,8 @@ export interface components {
             id: string;
             sku: string;
             name: string;
+            /** @description Arabic name, when the store provides one. */
+            name_ar: string;
             description: string;
             kind: string;
             /**
@@ -846,6 +853,7 @@ export interface components {
             id: string;
             sku: string;
             name: string;
+            name_ar: string;
             kind: string;
             image_url: string;
         };
@@ -940,6 +948,7 @@ export interface components {
             detail: string;
             /** Format: uuid */
             item_id?: string;
+            available?: number;
             /** Format: decimal */
             previous_price?: string;
             /** Format: decimal */

@@ -1,7 +1,8 @@
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 
 import type { Cart } from "../api/client";
 import { TotalsTable } from "./CartPanel";
+import { renderWithI18n } from "../test/render";
 
 const totals: Cart["totals"] = {
   prices_include_vat: true,
@@ -16,7 +17,7 @@ const totals: Cart["totals"] = {
 
 describe("TotalsTable", () => {
   it("shows the discount, free shipping and VAT included in the total", () => {
-    render(<TotalsTable totals={totals} currency="SAR" />);
+    renderWithI18n(<TotalsTable totals={totals} currency="SAR" />);
     expect(screen.getByText("Discount").nextSibling).toHaveTextContent("-SAR 50.00");
     expect(screen.getByText("Free")).toBeInTheDocument();
     expect(screen.getByText("VAT 15% (included)").nextSibling).toHaveTextContent("SAR 64.57");
@@ -24,7 +25,7 @@ describe("TotalsTable", () => {
   });
 
   it("hides the discount row when nothing is discounted", () => {
-    render(<TotalsTable totals={{ ...totals, discount: "0.00", prices_include_vat: false }} currency="SAR" />);
+    renderWithI18n(<TotalsTable totals={{ ...totals, discount: "0.00", prices_include_vat: false }} currency="SAR" />);
     expect(screen.queryByText("Discount")).not.toBeInTheDocument();
     expect(screen.getByText("VAT 15%")).toBeInTheDocument();
   });

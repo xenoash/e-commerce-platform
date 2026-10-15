@@ -5,10 +5,17 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>E-commerce Platform</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <script>
       try {
         const theme = localStorage.getItem("ecommerce-demo:theme");
         if (theme === "light" || theme === "dark") document.documentElement.dataset.theme = theme;
+        const stored = localStorage.getItem("ecommerce-demo:lang");
+        const lang = stored === "en" || stored === "ar" ? stored : navigator.language.toLowerCase().startsWith("ar") ? "ar" : "en";
+        document.documentElement.lang = lang;
+        document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
       } catch {}
     </script>
   </head>

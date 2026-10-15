@@ -1,10 +1,18 @@
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 
-import { ApiProblem } from "../api/client";
+import { useI18n } from "../i18n/context";
+import { describeProblem } from "../i18n/problems";
 import { formatMoney } from "../lib/money";
 
-export function Money({ amount, currency = "SAR", className = "" }: { amount: string | number; currency?: string; className?: string }) {
-  return <span className={`tabular whitespace-nowrap ${className}`}>{formatMoney(amount, currency)}</span>;
+type MoneyProps = { amount: string | number; currency?: string; className?: string; negative?: boolean };
+
+export function Money({ amount, currency = "SAR", className = "", negative = false }: MoneyProps) {
+  return (
+    <span dir="ltr" className={`tabular whitespace-nowrap ${className}`}>
+      {negative ? "-" : ""}
+      {formatMoney(amount, currency)}
+    </span>
+  );
 }
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & { variant?: "primary" | "quiet" | "danger"; busy?: boolean };
@@ -48,18 +56,21 @@ export function Badge({ tone = "neutral", children }: { tone?: keyof typeof TONE
 }
 
 export function ProblemNotice({ error }: { error: unknown }) {
+  const i18n = useI18n();
   if (!error) return null;
-  const problem = error instanceof ApiProblem ? error : null;
+  const problem = describeProblem(error, i18n);
   return (
     <div role="alert" className="rounded-lg border border-bad/30 bg-bad/8 px-3 py-2 text-sm text-bad">
-      <p className="font-semibold">{problem?.body.detail ?? (error instanceof Error ? error.message : "Something went wrong.")}</p>
-      {problem ? <p className="mt-0.5 font-mono text-xs opacity-80">{problem.code}</p> : null}
-      {problem?.body.errors?.length ? (
-        <ul className="mt-1 list-disc pl-4 text-xs">
-          {problem.body.errors.map((item) => (
-            <li key={`${item.field}-${item.code}`}>
-              {item.field ? <span className="font-mono">{item.field}</span> : null} {item.message}
-            </li>
+      <p className="font-semibold">{problem.message}</p>
+      {problem.code ? (
+        <p dir="ltr" className="mt-0.5 text-start font-mono text-xs opacity-80">
+          {problem.code}
+        </p>
+      ) : null}
+      {problem.fields.length ? (
+        <ul className="mt-1 list-disc ps-4 text-xs">
+          {problem.fields.map((message) => (
+            <li key={message}>{message}</li>
           ))}
         </ul>
       ) : null}
@@ -86,8 +97,10 @@ const STATUS_TONES: Record<string, keyof typeof TONES> = {
   needs_attention: "bad",
 };
 
-export function StatusBadge({ status }: { status: string }) {
-  return <Badge tone={STATUS_TONES[status] ?? "neutral"}>{status.replaceAll("_", " ")}</Badge>;
+export function StatusBadge({ status, kind }: { status: string; kind: "order" | "payment" | "invoice" }) {
+  const { t, has } = useI18n();
+  const key = `status.${kind}.${status}`;
+  return <Badge tone={STATUS_TONES[status] ?? "neutral"}>{has(key) ? t(key) : status.replaceAll("_", " ")}</Badge>;
 }
 
 const PALETTE = ["#7c3aed", "#b45309", "#0f766e", "#be123c", "#1d4ed8", "#4d7c0f", "#a21caf", "#c2410c"];

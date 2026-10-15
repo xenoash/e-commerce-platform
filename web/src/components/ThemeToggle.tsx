@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from "react";
 
+import { useI18n } from "../i18n/context";
 import { applyThemeChoice, readThemeChoice, type ThemeChoice } from "../lib/theme";
 
 const ICON_PROPS = {
@@ -14,10 +15,10 @@ const ICON_PROPS = {
   "aria-hidden": true,
 };
 
-const OPTIONS: { choice: ThemeChoice; label: string; icon: ReactNode }[] = [
+const OPTIONS: { choice: ThemeChoice; label: "theme.light" | "theme.system" | "theme.dark"; icon: ReactNode }[] = [
   {
     choice: "light",
-    label: "Light",
+    label: "theme.light",
     icon: (
       <svg {...ICON_PROPS}>
         <circle cx="12" cy="12" r="4" />
@@ -27,7 +28,7 @@ const OPTIONS: { choice: ThemeChoice; label: string; icon: ReactNode }[] = [
   },
   {
     choice: "system",
-    label: "System",
+    label: "theme.system",
     icon: (
       <svg {...ICON_PROPS}>
         <rect x="3" y="4" width="18" height="12" rx="2" />
@@ -37,7 +38,7 @@ const OPTIONS: { choice: ThemeChoice; label: string; icon: ReactNode }[] = [
   },
   {
     choice: "dark",
-    label: "Dark",
+    label: "theme.dark",
     icon: (
       <svg {...ICON_PROPS}>
         <path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" />
@@ -48,6 +49,7 @@ const OPTIONS: { choice: ThemeChoice; label: string; icon: ReactNode }[] = [
 
 export function ThemeToggle() {
   const [choice, setChoice] = useState<ThemeChoice>(readThemeChoice);
+  const { t } = useI18n();
 
   function choose(next: ThemeChoice) {
     applyThemeChoice(next);
@@ -55,15 +57,15 @@ export function ThemeToggle() {
   }
 
   return (
-    <div role="radiogroup" aria-label="Colour theme" className="inline-flex rounded-lg border border-line bg-surface p-0.5">
+    <div role="radiogroup" aria-label={t("theme.label")} className="inline-flex rounded-lg border border-line bg-surface p-0.5">
       {OPTIONS.map((option) => (
         <button
           key={option.choice}
           type="button"
           role="radio"
           aria-checked={choice === option.choice}
-          aria-label={option.label}
-          title={option.label}
+          aria-label={t(option.label)}
+          title={t(option.label)}
           onClick={() => choose(option.choice)}
           className={`grid size-8 place-items-center rounded-md transition ${
             choice === option.choice ? "bg-accent text-accent-ink" : "text-muted hover:text-ink"

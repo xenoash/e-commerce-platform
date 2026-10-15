@@ -70,6 +70,14 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+:lang(ar) {
+  font-family: "Noto Sans Arabic", "Geeza Pro", "Segoe UI", Tahoma, sans-serif;
+}
+
+html[lang="ar"] * {
+  letter-spacing: 0 !important;
+}
+
 @media print {
   @page {
     size: A4;

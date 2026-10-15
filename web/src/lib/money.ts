@@ -8,3 +8,7 @@ export function formatMoney(amount: string | number, currency = "SAR") {
   }
   return `${currency} ${formatter.format(Number(amount))}`;
 }
+
+export function moneyText(amount: string | number, currency = "SAR") {
+  return `\u2066${formatMoney(amount, currency)}\u2069`;
+}

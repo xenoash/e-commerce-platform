@@ -4,8 +4,10 @@ import { Link } from "react-router";
 
 import { apiFor, unwrap } from "../api/client";
 import { useCart, useStoreSettings } from "../api/hooks";
+import { useI18n } from "../i18n/context";
 import { useSession } from "../lib/session-context";
 import { demoStore, type DemoAccount } from "../lib/stores";
+import { LanguageToggle } from "./LanguageToggle";
 import { ThemeToggle } from "./ThemeToggle";
 import { Badge, Button, ProblemNotice } from "./ui";
 
@@ -16,6 +18,7 @@ export function Layout({ children }: { children: ReactNode }) {
   const cart = useCart().data;
   const queryClient = useQueryClient();
   const [menuOpen, setMenuOpen] = useState(false);
+  const { t, lang } = useI18n();
 
   const signIn = useMutation({
     mutationFn: async (account: DemoAccount) => {
@@ -44,36 +47,37 @@ export function Layout({ children }: { children: ReactNode }) {
       <header className="sticky top-0 z-20 border-b border-line bg-paper/90 backdrop-blur print:hidden">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
           <Link to="/" className="text-sm text-muted hover:text-ink">
-            All stores
+            {t("nav.allStores")}
           </Link>
           <Link to={`/${store.handle}`} className="flex items-center gap-2">
-            <span className="text-lg font-bold tracking-tight">{store.name}</span>
+            <span className="text-lg font-bold tracking-tight">{store.name[lang]}</span>
             <Badge tone="info">{store.audience}</Badge>
           </Link>
           {settings ? (
             <span className="hidden text-xs text-muted sm:inline">
-              Prices {settings.prices_include_vat ? "include" : "exclude"} {Number(settings.vat_rate)}% VAT
+              {t(settings.prices_include_vat ? "nav.pricesInclude" : "nav.pricesExclude", { rate: Number(settings.vat_rate) })}
             </span>
           ) : null}
-          <div className="ml-auto flex items-center gap-3">
+          <div className="ms-auto flex flex-wrap items-center justify-end gap-3">
+            <LanguageToggle />
             <ThemeToggle />
             {session.token ? (
               <div className="flex items-center gap-3 text-sm">
                 <span className="text-muted">
-                  Signed in as <span className="font-semibold text-ink">{session.customerName}</span>
+                  {t("nav.account")} <span className="font-semibold text-ink">{session.customerName}</span>
                 </span>
                 <Button variant="quiet" onClick={signOut}>
-                  Sign out
+                  {t("nav.signOut")}
                 </Button>
               </div>
             ) : (
               <div className="relative">
                 <Button variant="quiet" onClick={() => setMenuOpen((open) => !open)} aria-expanded={menuOpen}>
-                  Sign in
+                  {t("nav.signIn")}
                 </Button>
                 {menuOpen ? (
-                  <div className="absolute right-0 mt-2 w-72 rounded-xl border border-line bg-surface p-3 shadow-xl">
-                    <p className="mb-2 text-xs text-muted">Demo accounts for this store. Tokens only work here.</p>
+                  <div className="absolute end-0 mt-2 w-72 rounded-xl border border-line bg-surface p-3 shadow-xl">
+                    <p className="mb-2 text-xs text-muted">{t("nav.demoAccounts")}</p>
                     {store.accounts.map((account) => (
                       <Button
                         key={account.email}
@@ -82,7 +86,7 @@ export function Layout({ children }: { children: ReactNode }) {
                         busy={signIn.isPending}
                         onClick={() => signIn.mutate(account)}
                       >
-                        {account.label}
+                        {account.label[lang]}
                       </Button>
                     ))}
                     <ProblemNotice error={signIn.error} />
@@ -91,15 +95,15 @@ export function Layout({ children }: { children: ReactNode }) {
               </div>
             )}
             <a href="#cart" className="relative rounded-lg border border-line bg-surface px-3 py-2 text-sm font-semibold">
-              Cart
-              <span className="ml-2 rounded-full bg-accent px-2 py-0.5 text-xs text-accent-ink tabular">{itemCount}</span>
+              {t("nav.cart")}
+              <span className="ms-2 rounded-full bg-accent px-2 py-0.5 text-xs text-accent-ink tabular">{itemCount}</span>
             </a>
           </div>
         </div>
       </header>
       <main className="mx-auto max-w-6xl px-4 py-6 print:max-w-none print:p-0">{children}</main>
       <footer className="mx-auto max-w-6xl px-4 pb-10 text-xs text-muted print:hidden">
-        Demo storefront for the multi-tenant cart API. Each store is a separate tenant in the same database.
+        {t("footer.note")}
       </footer>
     </div>
   );

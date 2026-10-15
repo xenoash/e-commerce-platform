@@ -6,6 +6,7 @@ import type { Invoice } from "../api/client";
 import { useInvoice, useInvoiceXmlDownload, useOrder } from "../api/hooks";
 import { Button, Card, ProblemNotice, StatusBadge } from "../components/ui";
 import { formatMoney } from "../lib/money";
+import { useI18n } from "../i18n/context";
 import { useSession } from "../lib/session-context";
 
 const TITLES = {
@@ -81,7 +82,7 @@ function InvoiceDocument({ invoice }: { invoice: Invoice }) {
   ];
 
   return (
-    <article className="mx-auto max-w-[820px] rounded-2xl border border-line bg-surface p-8 text-ink shadow-sm print:max-w-none print:rounded-none print:border-0 print:p-0 print:shadow-none">
+    <article dir="ltr" className="mx-auto max-w-[820px] rounded-2xl border border-line bg-surface p-8 text-ink shadow-sm print:max-w-none print:rounded-none print:border-0 print:p-0 print:shadow-none">
       <header className="flex flex-col gap-6 border-b-2 border-ink pb-6 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="text-xl font-bold">{invoice.seller.legal_name}</p>
@@ -208,6 +209,7 @@ export function InvoicePage() {
   const invoiceQuery = useInvoice(order);
   const invoice = invoiceQuery.data;
   const downloadXml = useInvoiceXmlDownload(order?.id, order?.invoice?.number);
+  const { t } = useI18n();
 
   if (orderQuery.error) return <ProblemNotice error={orderQuery.error} />;
 
@@ -215,15 +217,15 @@ export function InvoicePage() {
     <div className="space-y-4">
       <div className="mx-auto flex max-w-[820px] flex-wrap items-center gap-3 print:hidden">
         <Link to={`/${session.store}/orders/${orderId}`} className="text-sm text-muted hover:text-ink">
-          Back to the order
+          {t("invoice.backToOrder")}
         </Link>
-        {order?.invoice ? <StatusBadge status={order.invoice.status} /> : null}
-        <div className="ml-auto flex gap-2">
+        {order?.invoice ? <StatusBadge status={order.invoice.status} kind="invoice" /> : null}
+        <div className="ms-auto flex flex-wrap gap-2">
           <Button variant="quiet" onClick={downloadXml} disabled={!invoice}>
-            Download signed XML
+            {t("invoice.downloadXml")}
           </Button>
           <Button onClick={() => window.print()} disabled={!invoice}>
-            Print or save as PDF
+            {t("invoice.print")}
           </Button>
         </div>
       </div>
@@ -232,9 +234,7 @@ export function InvoicePage() {
       ) : (
         <Card className="mx-auto max-w-[820px]">
           <p className="text-sm text-muted">
-            {order?.invoice?.kind === "standard"
-              ? "This tax invoice is waiting for ZATCA clearance and will appear here once cleared."
-              : "The invoice is being issued. This page updates on its own."}
+            {order?.invoice?.kind === "standard" ? t("invoice.awaitingClearance") : t("invoice.beingIssued")}
           </p>
           <ProblemNotice error={invoiceQuery.error} />
         </Card>

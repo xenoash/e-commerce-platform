@@ -1,7 +1,8 @@
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import { ThemeToggle } from "./ThemeToggle";
+import { renderWithI18n } from "../test/render";
 
 describe("ThemeToggle", () => {
   beforeEach(() => {
@@ -10,7 +11,7 @@ describe("ThemeToggle", () => {
   });
 
   it("switches the page theme and reflects the active choice", async () => {
-    render(<ThemeToggle />);
+    renderWithI18n(<ThemeToggle />);
     expect(screen.getByRole("radio", { name: "System" })).toHaveAttribute("aria-checked", "true");
     await userEvent.click(screen.getByRole("radio", { name: "Dark" }));
     expect(document.documentElement.dataset.theme).toBe("dark");
