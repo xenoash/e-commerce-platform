@@ -96,9 +96,19 @@ def redeem_coupon(coupon, *, order, customer, amount):
         .update(times_used=F("times_used") + 1)
     )
     if not claimed:
-        raise Problem(409, ErrorCode.COUPON_USAGE_LIMIT_REACHED, "This coupon was fully redeemed a moment ago.")
+        raise Problem(
+            409,
+            ErrorCode.COUPON_NOT_APPLICABLE,
+            "This coupon was fully redeemed a moment ago.",
+            reason=str(ErrorCode.COUPON_USAGE_LIMIT_REACHED),
+        )
     if coupon.per_customer_limit is not None and active_redemptions(coupon, customer) >= coupon.per_customer_limit:
-        raise Problem(409, ErrorCode.COUPON_CUSTOMER_LIMIT_REACHED, "You have already used this coupon.")
+        raise Problem(
+            409,
+            ErrorCode.COUPON_NOT_APPLICABLE,
+            "You have already used this coupon.",
+            reason=str(ErrorCode.COUPON_CUSTOMER_LIMIT_REACHED),
+        )
     return CouponRedemption.objects.create(coupon=coupon, order=order, customer=customer, amount=amount)
 
 

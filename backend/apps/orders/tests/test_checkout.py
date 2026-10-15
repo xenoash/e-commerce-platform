@@ -142,8 +142,11 @@ def test_coupon_that_stopped_applying_blocks_checkout(guest_cart, product):
     client.put(f"/api/v1/carts/{cart_id}/coupon", {"code": "SOON-GONE"}, format="json")
     Coupon.objects.filter(pk=coupon.pk).update(ends_at=timezone.now() - timedelta(minutes=1))
     response = checkout(client, cart_id, payment_token="tok_success")
-    assert response.status_code == 409
-    assert response.data["code"] in ("CART_NOT_READY", "COUPON_NOT_APPLICABLE")
+    assert (response.status_code, response.data["code"], response.data["reason"]) == (
+        409,
+        "COUPON_NOT_APPLICABLE",
+        "COUPON_EXPIRED",
+    )
 
 
 def test_card_methods_need_a_token(guest_cart, product):

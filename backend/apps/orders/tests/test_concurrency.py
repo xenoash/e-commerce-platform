@@ -71,8 +71,10 @@ def test_single_use_coupon_is_redeemed_once(store, client_for):
     for client, cart_id in carts:
         assert client.put(f"/api/v1/carts/{cart_id}/coupon", {"code": "ONLYONE"}, format="json").status_code == 200
     results = run_concurrently(5, lambda i: checkout_call(*carts[i], key=f"coupon-race-{i:04d}"))
-    codes = Counter(body.get("code") or body.get("status") for _, body in results)
-    assert codes == {"paid": 1, "COUPON_USAGE_LIMIT_REACHED": 4}
+    outcomes = Counter(
+        (body.get("code"), body.get("reason")) if status == 409 else body["status"] for status, body in results
+    )
+    assert outcomes == {"paid": 1, ("COUPON_NOT_APPLICABLE", "COUPON_USAGE_LIMIT_REACHED"): 4}
     assert Coupon.objects.get(code="ONLYONE").times_used == 1
     assert Product.objects.get(pk=product.pk).stock == 99
 

@@ -66,6 +66,9 @@ carry `items[]` with `item_id`, `product_id`, `requested`, `available` and a `re
 `discontinued`. A product that sells out while a shopper is checking out always reads as `OUT_OF_STOCK`, whichever
 step catches it.
 
+A coupon that stops applying between the cart and checkout (expired, fully redeemed, a rule no longer met) always
+returns `409 COUPON_NOT_APPLICABLE`, with the specific cause in `reason`, for example `COUPON_USAGE_LIMIT_REACHED`.
+
 ## Checkout and idempotency
 
 Generate one `Idempotency-Key` per checkout attempt.
