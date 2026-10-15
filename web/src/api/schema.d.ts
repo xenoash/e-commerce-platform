@@ -601,14 +601,16 @@ export interface components {
             previous_invoice_hash: string;
             /** Format: date-time */
             issued_at: string;
+            order_number: string;
+            po_number: string;
+            /** @description Original invoice, for credit notes. */
+            billing_reference: string;
             /** @description Base64 TLV payload to render as a QR code. */
             qr_code: string;
-            seller: {
-                [key: string]: unknown;
-            };
-            buyer: {
-                [key: string]: unknown;
-            };
+            seller: components["schemas"]["InvoiceSeller"];
+            buyer: components["schemas"]["InvoiceBuyer"];
+            /** @description Read back from the signed XML, exactly as submitted. */
+            lines: components["schemas"]["InvoiceLine"][];
             /** Format: decimal */
             taxable_amount: string;
             /** Format: decimal */
@@ -620,12 +622,54 @@ export interface components {
             }[];
             xml_url: string;
         };
+        InvoiceAddress: {
+            street: string;
+            building_number: string;
+            district: string;
+            city: string;
+            postal_code: string;
+            country: string;
+        };
+        InvoiceBuyer: {
+            name: string;
+            vat_number: string;
+            cr_number: string;
+            address: components["schemas"]["InvoiceAddress"] | null;
+        };
         /**
          * @description * `simplified` - simplified
          *     * `standard` - standard
          * @enum {string}
          */
         InvoiceKindEnum: "simplified" | "standard";
+        InvoiceLine: {
+            name: string;
+            quantity: number;
+            /**
+             * Format: decimal
+             * @description Net unit price, excluding VAT.
+             */
+            unit_price: string;
+            /** Format: decimal */
+            net: string;
+            /** Format: decimal */
+            vat_rate: string;
+            /** Format: decimal */
+            vat: string;
+            /** Format: decimal */
+            total: string;
+        };
+        InvoiceSeller: {
+            legal_name: string;
+            vat_number: string;
+            cr_number: string;
+            street: string;
+            building_number: string;
+            district: string;
+            city: string;
+            postal_code: string;
+            country: string;
+        };
         InvoiceSummary: {
             /** Format: uuid */
             id: string;

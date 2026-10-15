@@ -349,3 +349,18 @@ def test_sweepers_issue_missing_invoices_then_submit_them(store):
     Invoice.objects.update(issued_at=timezone.now() - timedelta(minutes=10))
     assert tasks.submit_due_invoices() == {"reported": 1}
     assert Invoice.objects.get().status == "reported"
+
+
+def test_invoice_endpoint_reads_lines_back_from_the_signed_xml(store, django_capture_on_commit_callbacks):
+    from apps.invoicing.serializers import InvoiceSerializer, invoice_payload
+
+    with django_capture_on_commit_callbacks(execute=True):
+        invoice, _ = services.issue_invoice(make_order(store, kind="standard", lines=(("Chair", 3, "86.96"),)))
+    payload = InvoiceSerializer(invoice_payload(invoice)).data
+    assert [(line["quantity"], line["unit_price"]) for line in payload["lines"][:2]] == [(2, "75.61"), (1, "75.63")]
+    assert sum(Decimal(line["net"]) for line in payload["lines"]) == invoice.taxable_amount
+    assert sum(Decimal(line["total"]) for line in payload["lines"]) == invoice.total
+    assert payload["buyer"]["vat_number"] == BILLING["vat_number"]
+    assert payload["buyer"]["address"]["building_number"] == BILLING["building_number"]
+    assert payload["seller"]["vat_number"] == store.vat_number
+    assert payload["order_number"].startswith("ORD-")

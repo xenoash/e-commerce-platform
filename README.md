@@ -22,6 +22,7 @@ make demo          # end-to-end walkthrough against the running API
 | Swagger UI | http://localhost:8100/api/v1/docs |
 | Demo login | `sara@example.com` (B2C) or `procurement@acme.example.com` (B2B), password `demo-pass-123` |
 | Sandbox cards | `tok_success`, `tok_3ds`, `tok_decline`, `tok_insufficient_funds`, `tok_timeout` |
+| ZATCA invoice | Order page, then **View invoice**: a bilingual tax invoice with the QR, printable or saved as PDF, plus the signed XML |
 
 Every API call names its tenant in the `X-Store` header: `oud-and-amber` (B2C, VAT-inclusive prices) or
 `riyadh-office-supply` (B2B, VAT-exclusive prices, pay on invoice).
@@ -37,7 +38,7 @@ Every API call names its tenant in the `X-Store` header: `oud-and-amber` (B2C, V
 | ZATCA invoices | `apps/invoicing`: UBL 2.1, XAdES signature, QR, hash chain, reporting and clearance |
 | Coupon constraints (bonus) | `apps/promotions/rules.py`: min subtotal, cities, customer kind, first order |
 | B2B orders (bonus) | Business accounts, credit limits, PO numbers, standard tax invoices cleared by ZATCA |
-| Race conditions, docs, tests | 147 backend tests (95% coverage) including threaded tests against real Postgres |
+| Race conditions, docs, tests | 148 backend tests (95% coverage) including threaded tests against real Postgres |
 
 ## Architecture
 

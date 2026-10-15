@@ -72,6 +72,11 @@ Generate one `Idempotency-Key` per checkout attempt.
 - **Send `expected_total`** with the total the shopper saw. If prices moved, checkout fails with `409
   CART_TOTAL_CHANGED` and the new total, and nothing is reserved.
 
+`GET /orders/{id}/invoice` returns the tax invoice as JSON: seller, buyer, totals, the QR payload, and line items
+read back from the signed XML, so they match what was submitted to ZATCA exactly. Add `?format=xml` for the signed UBL
+document. Simplified invoices are available as soon as they are issued. Standard (B2B) invoices return `409
+INVOICE_NOT_READY` until ZATCA clears them.
+
 When the response has `payment.next_action`, redirect the shopper there (3-D Secure). After the redirect back, call
 `POST /orders/{id}/payment/confirm`. It asks the gateway for the result and is safe to repeat.
 

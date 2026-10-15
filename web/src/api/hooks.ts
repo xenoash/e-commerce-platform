@@ -178,11 +178,27 @@ export function useOrder(orderId: string | undefined) {
 export function useInvoice(order: Order | undefined) {
   const { session } = useSession();
   const api = useOrderApi(order?.id);
-  const ready = Boolean(order?.invoice && ["reported", "cleared", "pending_retry"].includes(order.invoice.status));
+  const ready = Boolean(order?.invoice && (order.invoice.kind === "simplified" || order.invoice.status === "cleared"));
   return useQuery({
     queryKey: ["invoice", session.store, order?.id, order?.invoice?.status],
     enabled: ready,
     retry: false,
     queryFn: () => unwrap(api.GET("/api/v1/orders/{order_id}/invoice", { params: { path: { order_id: order!.id } } })),
   });
+}
+
+export function useInvoiceXmlDownload(orderId: string | undefined, fileName: string | undefined) {
+  const api = useOrderApi(orderId);
+  return async () => {
+    if (!orderId) return;
+    const { data, response } = await api.GET("/api/v1/orders/{order_id}/invoice", {
+      params: { path: { order_id: orderId }, query: { format: "xml" } },
+      parseAs: "text",
+    });
+    if (!response.ok || typeof data !== "string") return;
+    const url = URL.createObjectURL(new Blob([data], { type: "application/xml" }));
+    const link = Object.assign(document.createElement("a"), { href: url, download: `${fileName ?? "invoice"}.xml` });
+    link.click();
+    URL.revokeObjectURL(url);
+  };
 }

@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import { Link, useParams } from "react-router";
 
 import { unwrap, type Invoice, type Order } from "../api/client";
-import { useInvoice, useOrder, useOrderApi } from "../api/hooks";
+import { useInvoice, useInvoiceXmlDownload, useOrder, useOrderApi } from "../api/hooks";
 import { Button, Card, Money, ProblemNotice, StatusBadge } from "../components/ui";
 import { displayLineAmount, paymentLabel } from "../lib/labels";
 import { useSession } from "../lib/session-context";
@@ -30,19 +30,9 @@ function useConfirmOnReturn(order: Order | undefined) {
 }
 
 function InvoiceCard({ order, invoice }: { order: Order; invoice: Invoice | undefined }) {
-  const api = useOrderApi(order.id);
 
-  async function downloadXml() {
-    const { data, response } = await api.GET("/api/v1/orders/{order_id}/invoice", {
-      params: { path: { order_id: order.id }, query: { format: "xml" } },
-      parseAs: "text",
-    });
-    if (!response.ok || typeof data !== "string") return;
-    const url = URL.createObjectURL(new Blob([data], { type: "application/xml" }));
-    const link = Object.assign(document.createElement("a"), { href: url, download: `${order.invoice?.number}.xml` });
-    link.click();
-    URL.revokeObjectURL(url);
-  }
+  const downloadXml = useInvoiceXmlDownload(order.id, order.invoice?.number);
+  const { session } = useSession();
 
   if (!order.invoice) {
     const fulfilled = order.status === "paid" || order.status === "confirmed";
@@ -93,10 +83,18 @@ function InvoiceCard({ order, invoice }: { order: Order; invoice: Invoice | unde
           </dl>
         </div>
       ) : null}
-      {!awaitingClearance ? (
-        <Button variant="quiet" onClick={downloadXml}>
-          Download signed XML
-        </Button>
+      {!awaitingClearance && invoice ? (
+        <div className="flex flex-wrap gap-2">
+          <Link
+            to={`/${session.store}/orders/${order.id}/invoice`}
+            className="inline-flex items-center rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-ink hover:opacity-90"
+          >
+            View invoice
+          </Link>
+          <Button variant="quiet" onClick={downloadXml}>
+            Download signed XML
+          </Button>
+        </div>
       ) : null}
     </Card>
   );

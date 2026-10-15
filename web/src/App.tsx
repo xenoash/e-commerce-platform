@@ -5,6 +5,7 @@ import { demoStore } from "./lib/stores";
 import { SessionProvider } from "./lib/session";
 import { CheckoutPage } from "./pages/CheckoutPage";
 import { HomePage } from "./pages/HomePage";
+import { InvoicePage } from "./pages/InvoicePage";
 import { OrderPage } from "./pages/OrderPage";
 import { StorePage } from "./pages/StorePage";
 
@@ -28,6 +29,7 @@ export default function App() {
         <Route index element={<StorePage />} />
         <Route path="checkout" element={<CheckoutPage />} />
         <Route path="orders/:orderId" element={<OrderPage />} />
+        <Route path="orders/:orderId/invoice" element={<InvoicePage />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

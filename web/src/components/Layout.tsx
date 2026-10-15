@@ -40,7 +40,7 @@ export function Layout({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen">
-      <header className="sticky top-0 z-20 border-b border-line bg-paper/90 backdrop-blur">
+      <header className="sticky top-0 z-20 border-b border-line bg-paper/90 backdrop-blur print:hidden">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
           <Link to="/" className="text-sm text-muted hover:text-ink">
             All stores
@@ -95,8 +95,8 @@ export function Layout({ children }: { children: ReactNode }) {
           </div>
         </div>
       </header>
-      <main className="mx-auto max-w-6xl px-4 py-6">{children}</main>
-      <footer className="mx-auto max-w-6xl px-4 pb-10 text-xs text-muted">
+      <main className="mx-auto max-w-6xl px-4 py-6 print:max-w-none print:p-0">{children}</main>
+      <footer className="mx-auto max-w-6xl px-4 pb-10 text-xs text-muted print:hidden">
         Demo storefront for the multi-tenant cart API. Each store is a separate tenant in the same database.
       </footer>
     </div>

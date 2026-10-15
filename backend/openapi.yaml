@@ -1748,15 +1748,25 @@ components:
         issued_at:
           type: string
           format: date-time
+        order_number:
+          type: string
+        po_number:
+          type: string
+        billing_reference:
+          type: string
+          description: Original invoice, for credit notes.
         qr_code:
           type: string
           description: Base64 TLV payload to render as a QR code.
         seller:
-          type: object
-          additionalProperties: {}
+          $ref: '#/components/schemas/InvoiceSeller'
         buyer:
-          type: object
-          additionalProperties: {}
+          $ref: '#/components/schemas/InvoiceBuyer'
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/InvoiceLine'
+          description: Read back from the signed XML, exactly as submitted.
         taxable_amount:
           type: string
           format: decimal
@@ -1777,6 +1787,7 @@ components:
         xml_url:
           type: string
       required:
+      - billing_reference
       - buyer
       - doc_type
       - icv
@@ -1784,7 +1795,10 @@ components:
       - invoice_hash
       - issued_at
       - kind
+      - lines
       - number
+      - order_number
+      - po_number
       - previous_invoice_hash
       - qr_code
       - seller
@@ -1795,6 +1809,46 @@ components:
       - vat_total
       - xml_url
       - zatca_warnings
+    InvoiceAddress:
+      type: object
+      properties:
+        street:
+          type: string
+        building_number:
+          type: string
+        district:
+          type: string
+        city:
+          type: string
+        postal_code:
+          type: string
+        country:
+          type: string
+      required:
+      - building_number
+      - city
+      - country
+      - district
+      - postal_code
+      - street
+    InvoiceBuyer:
+      type: object
+      properties:
+        name:
+          type: string
+        vat_number:
+          type: string
+        cr_number:
+          type: string
+        address:
+          allOf:
+          - $ref: '#/components/schemas/InvoiceAddress'
+          nullable: true
+      required:
+      - address
+      - cr_number
+      - name
+      - vat_number
     InvoiceKindEnum:
       enum:
       - simplified
@@ -1803,6 +1857,73 @@ components:
       description: |-
         * `simplified` - simplified
         * `standard` - standard
+    InvoiceLine:
+      type: object
+      properties:
+        name:
+          type: string
+        quantity:
+          type: integer
+        unit_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          description: Net unit price, excluding VAT.
+        net:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        vat_rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        vat:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        total:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+      required:
+      - name
+      - net
+      - quantity
+      - total
+      - unit_price
+      - vat
+      - vat_rate
+    InvoiceSeller:
+      type: object
+      properties:
+        legal_name:
+          type: string
+        vat_number:
+          type: string
+        cr_number:
+          type: string
+        street:
+          type: string
+        building_number:
+          type: string
+        district:
+          type: string
+        city:
+          type: string
+        postal_code:
+          type: string
+        country:
+          type: string
+      required:
+      - building_number
+      - city
+      - country
+      - cr_number
+      - district
+      - legal_name
+      - postal_code
+      - street
+      - vat_number
     InvoiceSummary:
       type: object
       properties:
