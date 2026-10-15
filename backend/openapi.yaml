@@ -1,0 +1,2433 @@
+openapi: 3.0.3
+info:
+  title: E-commerce Platform Cart API
+  version: 1.0.0
+  description: Multi-tenant storefront cart API. Every request names its store in
+    the `X-Store` header. Errors are RFC 9457 problem documents with a stable `code`.
+paths:
+  /api/v1/auth/token:
+    post:
+      operationId: createToken
+      summary: Sign in and get a store-scoped bearer token
+      parameters:
+      - in: header
+        name: X-Store
+        schema:
+          type: string
+        description: Handle of the store (tenant) this request is for.
+        required: true
+      tags:
+      - Auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRequestRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Wrong email or password for this store.
+  /api/v1/carts:
+    post:
+      operationId: createCart
+      description: Signed-in customers get their active cart back (200) or a new one
+        (201). Guests always get a new cart and a one-time `cart_token`.
+      summary: Open a cart
+      parameters:
+      - in: header
+        name: X-Store
+        schema:
+          type: string
+        description: Handle of the store (tenant) this request is for.
+        required: true
+      tags:
+      - Carts
+      security:
+      - customerToken: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreatedCart'
+          description: ''
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreatedCart'
+          description: ''
+  /api/v1/carts/{cart_id}:
+    get:
+      operationId: getCart
+      summary: Get a cart with live prices, warnings and checkout readiness
+      parameters:
+      - in: header
+        name: X-Cart-Token
+        schema:
+          type: string
+        description: Secret returned when a guest cart is created. Not needed for
+          signed-in customers.
+      - in: header
+        name: X-Store
+        schema:
+          type: string
+        description: Handle of the store (tenant) this request is for.
+        required: true
+      - in: path
+        name: cart_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Carts
+      security:
+      - customerToken: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cart'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Cart not found, or it belongs to another customer or store.
+  /api/v1/carts/{cart_id}/billing-address:
+    put:
+      operationId: setBillingAddress
+      summary: Set the billing address; a VAT number makes the invoice a standard
+        (B2B) tax invoice
+      parameters:
+      - in: header
+        name: If-Match
+        schema:
+          type: string
+        description: Cart version from the last read (ETag), for example "7". A stale
+          version returns 412.
+      - in: header
+        name: X-Cart-Token
+        schema:
+          type: string
+        description: Secret returned when a guest cart is created. Not needed for
+          signed-in customers.
+      - in: header
+        name: X-Store
+        schema:
+          type: string
+        description: Handle of the store (tenant) this request is for.
+        required: true
+      - in: path
+        name: cart_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Carts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BillingAddressRequest'
+        required: true
+      security:
+      - customerToken: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cart'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Cart not found, or it belongs to another customer or store.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: The cart is not open, or the change conflicts with stock.
+        '412':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: If-Match did not match the current cart version.
+  /api/v1/carts/{cart_id}/checkout:
+    post:
+      operationId: checkoutCart
+      description: Creates an order and charges the chosen payment method. Returns
+        201 with the order. When `payment.next_action` is present, send the shopper
+        there (3-D Secure), then call `POST /orders/{id}/payment/confirm`. Retrying
+        with the same Idempotency-Key replays the result.
+      summary: Place the order and start payment
+      parameters:
+      - in: header
+        name: Idempotency-Key
+        schema:
+          type: string
+        description: Unique per checkout attempt. Retrying with the same key never
+          creates a second order.
+        required: true
+      - in: header
+        name: X-Cart-Token
+        schema:
+          type: string
+        description: Secret returned when a guest cart is created. Not needed for
+          signed-in customers.
+      - in: header
+        name: X-Store
+        schema:
+          type: string
+        description: Handle of the store (tenant) this request is for.
+        required: true
+      - in: path
+        name: cart_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Checkout
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckoutRequest'
+      security:
+      - customerToken: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+          description: ''
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+          description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Cart not ready, total changed, out of stock, coupon no longer
+            applies, or request in progress.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Payment token missing, method not allowed, or Idempotency-Key
+            reused with another body.
+        '428':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Idempotency-Key header missing.
+  /api/v1/carts/{cart_id}/coupon:
+    put:
+      operationId: applyCoupon
+      summary: Apply a coupon (replaces any applied coupon)
+      parameters:
+      - in: header
+        name: If-Match
+        schema:
+          type: string
+        description: Cart version from the last read (ETag), for example "7". A stale
+          version returns 412.
+      - in: header
+        name: X-Cart-Token
+        schema:
+          type: string
+        description: Secret returned when a guest cart is created. Not needed for
+          signed-in customers.
+      - in: header
+        name: X-Store
+        schema:
+          type: string
+        description: Handle of the store (tenant) this request is for.
+        required: true
+      - in: path
+        name: cart_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Carts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApplyCouponRequest'
+        required: true
+      security:
+      - customerToken: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cart'
+          description: ''
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Unknown coupon or a failed constraint.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Cart not found, or it belongs to another customer or store.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: The cart is not open, or the change conflicts with stock.
+        '412':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: If-Match did not match the current cart version.
+    delete:
+      operationId: removeCoupon
+      summary: Remove the coupon (no-op when none is applied)
+      parameters:
+      - in: header
+        name: If-Match
+        schema:
+          type: string
+        description: Cart version from the last read (ETag), for example "7". A stale
+          version returns 412.
+      - in: header
+        name: X-Cart-Token
+        schema:
+          type: string
+        description: Secret returned when a guest cart is created. Not needed for
+          signed-in customers.
+      - in: header
+        name: X-Store
+        schema:
+          type: string
+        description: Handle of the store (tenant) this request is for.
+        required: true
+      - in: path
+        name: cart_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Carts
+      security:
+      - customerToken: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cart'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Cart not found, or it belongs to another customer or store.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: The cart is not open, or the change conflicts with stock.
+        '412':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: If-Match did not match the current cart version.
+  /api/v1/carts/{cart_id}/items:
+    post:
+      operationId: addCartItem
+      summary: Add a product (merges into the existing line)
+      parameters:
+      - in: header
+        name: If-Match
+        schema:
+          type: string
+        description: Cart version from the last read (ETag), for example "7". A stale
+          version returns 412.
+      - in: header
+        name: X-Cart-Token
+        schema:
+          type: string
+        description: Secret returned when a guest cart is created. Not needed for
+          signed-in customers.
+      - in: header
+        name: X-Store
+        schema:
+          type: string
+        description: Handle of the store (tenant) this request is for.
+        required: true
+      - in: path
+        name: cart_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Carts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddItemRequest'
+        required: true
+      security:
+      - customerToken: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cart'
+          description: ''
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Unknown product or quantity limit.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Cart not found, or it belongs to another customer or store.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: The cart is not open, or the change conflicts with stock.
+        '412':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: If-Match did not match the current cart version.
+  /api/v1/carts/{cart_id}/items/{item_id}:
+    patch:
+      operationId: updateCartItem
+      summary: Change a line's quantity
+      parameters:
+      - in: header
+        name: If-Match
+        schema:
+          type: string
+        description: Cart version from the last read (ETag), for example "7". A stale
+          version returns 412.
+      - in: header
+        name: X-Cart-Token
+        schema:
+          type: string
+        description: Secret returned when a guest cart is created. Not needed for
+          signed-in customers.
+      - in: header
+        name: X-Store
+        schema:
+          type: string
+        description: Handle of the store (tenant) this request is for.
+        required: true
+      - in: path
+        name: cart_id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: item_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Carts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUpdateItemRequest'
+      security:
+      - customerToken: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cart'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Cart not found, or it belongs to another customer or store.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: The cart is not open, or the change conflicts with stock.
+        '412':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: If-Match did not match the current cart version.
+    delete:
+      operationId: removeCartItem
+      summary: Remove a product
+      parameters:
+      - in: header
+        name: If-Match
+        schema:
+          type: string
+        description: Cart version from the last read (ETag), for example "7". A stale
+          version returns 412.
+      - in: header
+        name: X-Cart-Token
+        schema:
+          type: string
+        description: Secret returned when a guest cart is created. Not needed for
+          signed-in customers.
+      - in: header
+        name: X-Store
+        schema:
+          type: string
+        description: Handle of the store (tenant) this request is for.
+        required: true
+      - in: path
+        name: cart_id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: item_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Carts
+      security:
+      - customerToken: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cart'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Cart not found, or it belongs to another customer or store.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: The cart is not open, or the change conflicts with stock.
+        '412':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: If-Match did not match the current cart version.
+  /api/v1/carts/{cart_id}/payment-method:
+    put:
+      operationId: setPaymentMethod
+      summary: Choose how to pay (the card token is sent at checkout, never stored
+        on the cart)
+      parameters:
+      - in: header
+        name: If-Match
+        schema:
+          type: string
+        description: Cart version from the last read (ETag), for example "7". A stale
+          version returns 412.
+      - in: header
+        name: X-Cart-Token
+        schema:
+          type: string
+        description: Secret returned when a guest cart is created. Not needed for
+          signed-in customers.
+      - in: header
+        name: X-Store
+        schema:
+          type: string
+        description: Handle of the store (tenant) this request is for.
+        required: true
+      - in: path
+        name: cart_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Carts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentMethodInputRequest'
+        required: true
+      security:
+      - customerToken: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cart'
+          description: ''
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Method not offered or not allowed for this customer.
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Cart not found, or it belongs to another customer or store.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: The cart is not open, or the change conflicts with stock.
+        '412':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: If-Match did not match the current cart version.
+  /api/v1/carts/{cart_id}/shipping-address:
+    put:
+      operationId: setShippingAddress
+      summary: Set the delivery address (Saudi national address)
+      parameters:
+      - in: header
+        name: If-Match
+        schema:
+          type: string
+        description: Cart version from the last read (ETag), for example "7". A stale
+          version returns 412.
+      - in: header
+        name: X-Cart-Token
+        schema:
+          type: string
+        description: Secret returned when a guest cart is created. Not needed for
+          signed-in customers.
+      - in: header
+        name: X-Store
+        schema:
+          type: string
+        description: Handle of the store (tenant) this request is for.
+        required: true
+      - in: path
+        name: cart_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Carts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddressRequest'
+        required: true
+      security:
+      - customerToken: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cart'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Cart not found, or it belongs to another customer or store.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: The cart is not open, or the change conflicts with stock.
+        '412':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: If-Match did not match the current cart version.
+  /api/v1/carts/{cart_id}/suggestions:
+    get:
+      operationId: listCartSuggestions
+      summary: Upsell and cross-sell suggestions for this cart
+      parameters:
+      - in: header
+        name: X-Cart-Token
+        schema:
+          type: string
+        description: Secret returned when a guest cart is created. Not needed for
+          signed-in customers.
+      - in: header
+        name: X-Store
+        schema:
+          type: string
+        description: Handle of the store (tenant) this request is for.
+        required: true
+      - in: path
+        name: cart_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Carts
+      security:
+      - customerToken: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuggestionList'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Cart not found, or it belongs to another customer or store.
+  /api/v1/me:
+    get:
+      operationId: getMe
+      summary: The signed-in customer
+      parameters:
+      - in: header
+        name: X-Store
+        schema:
+          type: string
+        description: Handle of the store (tenant) this request is for.
+        required: true
+      tags:
+      - Auth
+      security:
+      - customerToken: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+          description: ''
+  /api/v1/orders:
+    get:
+      operationId: listOrders
+      summary: The signed-in customer's orders
+      parameters:
+      - in: header
+        name: X-Store
+        schema:
+          type: string
+        description: Handle of the store (tenant) this request is for.
+        required: true
+      tags:
+      - Orders
+      security:
+      - customerToken: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Order'
+          description: ''
+  /api/v1/orders/{order_id}:
+    get:
+      operationId: getOrder
+      summary: Get an order with its payment and invoice status
+      parameters:
+      - in: header
+        name: X-Cart-Token
+        schema:
+          type: string
+        description: Secret returned when a guest cart is created. Not needed for
+          signed-in customers.
+      - in: header
+        name: X-Store
+        schema:
+          type: string
+        description: Handle of the store (tenant) this request is for.
+        required: true
+      - in: path
+        name: order_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Orders
+      security:
+      - customerToken: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Order not found.
+  /api/v1/orders/{order_id}/invoice:
+    get:
+      operationId: getOrderInvoice
+      summary: The order's ZATCA tax invoice (JSON with QR payload, or ?format=xml
+        for the signed UBL)
+      parameters:
+      - in: header
+        name: X-Cart-Token
+        schema:
+          type: string
+        description: Secret returned when a guest cart is created. Not needed for
+          signed-in customers.
+      - in: header
+        name: X-Store
+        schema:
+          type: string
+        description: Handle of the store (tenant) this request is for.
+        required: true
+      - in: query
+        name: format
+        schema:
+          type: string
+          enum:
+          - json
+          - xml
+      - in: path
+        name: order_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Orders
+      security:
+      - customerToken: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Invoice'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Order not found.
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Invoice not issued or not cleared yet.
+  /api/v1/orders/{order_id}/payment/confirm:
+    post:
+      operationId: confirmOrderPayment
+      summary: Re-check payment with the gateway after a redirect (safe to call repeatedly)
+      parameters:
+      - in: header
+        name: X-Cart-Token
+        schema:
+          type: string
+        description: Secret returned when a guest cart is created. Not needed for
+          signed-in customers.
+      - in: header
+        name: X-Store
+        schema:
+          type: string
+        description: Handle of the store (tenant) this request is for.
+        required: true
+      - in: path
+        name: order_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Orders
+      security:
+      - customerToken: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Order not found.
+  /api/v1/payment-methods:
+    get:
+      operationId: listPaymentMethods
+      summary: Payment methods this store accepts
+      parameters:
+      - in: header
+        name: X-Store
+        schema:
+          type: string
+        description: Handle of the store (tenant) this request is for.
+        required: true
+      tags:
+      - Store
+      security:
+      - customerToken: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PaymentMethod'
+          description: ''
+  /api/v1/products:
+    get:
+      operationId: listProducts
+      summary: Browse the store's catalogue
+      parameters:
+      - in: header
+        name: X-Store
+        schema:
+          type: string
+        description: Handle of the store (tenant) this request is for.
+        required: true
+      - in: query
+        name: cursor
+        schema:
+          type: string
+      - in: query
+        name: kind
+        schema:
+          type: string
+          enum:
+          - digital
+          - physical
+          - service
+      - in: query
+        name: limit
+        schema:
+          type: integer
+      - in: query
+        name: q
+        schema:
+          type: string
+        description: Search by name or SKU.
+      tags:
+      - Catalogue
+      security:
+      - customerToken: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+          description: ''
+  /api/v1/products/{product_id}:
+    get:
+      operationId: getProduct
+      summary: Get one product
+      parameters:
+      - in: header
+        name: X-Store
+        schema:
+          type: string
+        description: Handle of the store (tenant) this request is for.
+        required: true
+      - in: path
+        name: product_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - Catalogue
+      security:
+      - customerToken: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Product not found in this store.
+  /api/v1/store:
+    get:
+      operationId: getStore
+      summary: Public settings of the current store
+      parameters:
+      - in: header
+        name: X-Store
+        schema:
+          type: string
+        description: Handle of the store (tenant) this request is for.
+        required: true
+      tags:
+      - Store
+      security:
+      - customerToken: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Store'
+          description: ''
+  /api/v1/webhooks/payments/{gateway}/{store}:
+    post:
+      operationId: receivePaymentWebhook
+      summary: Gateway callback. Signature-verified with the store's secret; duplicates
+        are no-ops.
+      parameters:
+      - in: path
+        name: gateway
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: store
+        schema:
+          type: string
+        required: true
+      tags:
+      - Webhooks
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookAck'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+          description: Signature invalid.
+components:
+  schemas:
+    AddItemRequest:
+      type: object
+      properties:
+        product_id:
+          type: string
+          format: uuid
+        quantity:
+          type: integer
+          maximum: 999
+          minimum: 1
+          default: 1
+      required:
+      - product_id
+    Address:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 120
+        phone:
+          type: string
+          pattern: ^\+9665\d{8}$
+          maxLength: 16
+        email:
+          oneOf:
+          - type: string
+            format: email
+          - type: string
+            maxLength: 0
+        street:
+          type: string
+          maxLength: 120
+        building_number:
+          type: string
+          pattern: ^\d{4}$
+          maxLength: 4
+        additional_number:
+          oneOf:
+          - type: string
+            pattern: ^\d{4}$
+            maxLength: 4
+          - type: string
+            maxLength: 0
+        district:
+          type: string
+          maxLength: 120
+        city:
+          type: string
+          maxLength: 80
+        postal_code:
+          type: string
+          pattern: ^\d{5}$
+          maxLength: 5
+        country:
+          allOf:
+          - $ref: '#/components/schemas/CountryEnum'
+          default: SA
+          description: |-
+            Delivery is limited to Saudi Arabia.
+
+            * `SA` - SA
+      required:
+      - building_number
+      - city
+      - district
+      - name
+      - phone
+      - postal_code
+      - street
+    AddressRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        phone:
+          type: string
+          minLength: 1
+          pattern: ^\+9665\d{8}$
+          maxLength: 16
+        email:
+          oneOf:
+          - type: string
+            format: email
+          - type: string
+            maxLength: 0
+        street:
+          type: string
+          minLength: 1
+          maxLength: 120
+        building_number:
+          type: string
+          minLength: 1
+          pattern: ^\d{4}$
+          maxLength: 4
+        additional_number:
+          oneOf:
+          - type: string
+            pattern: ^\d{4}$
+            maxLength: 4
+          - type: string
+            maxLength: 0
+        district:
+          type: string
+          minLength: 1
+          maxLength: 120
+        city:
+          type: string
+          minLength: 1
+          maxLength: 80
+        postal_code:
+          type: string
+          minLength: 1
+          pattern: ^\d{5}$
+          maxLength: 5
+        country:
+          allOf:
+          - $ref: '#/components/schemas/CountryEnum'
+          default: SA
+          description: |-
+            Delivery is limited to Saudi Arabia.
+
+            * `SA` - SA
+      required:
+      - building_number
+      - city
+      - district
+      - name
+      - phone
+      - postal_code
+      - street
+    ApplyCouponRequest:
+      type: object
+      properties:
+        code:
+          type: string
+          minLength: 1
+          maxLength: 40
+      required:
+      - code
+    BillingAddress:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 120
+        phone:
+          type: string
+          pattern: ^\+9665\d{8}$
+          maxLength: 16
+        email:
+          oneOf:
+          - type: string
+            format: email
+          - type: string
+            maxLength: 0
+        street:
+          type: string
+          maxLength: 120
+        building_number:
+          type: string
+          pattern: ^\d{4}$
+          maxLength: 4
+        additional_number:
+          oneOf:
+          - type: string
+            pattern: ^\d{4}$
+            maxLength: 4
+          - type: string
+            maxLength: 0
+        district:
+          type: string
+          maxLength: 120
+        city:
+          type: string
+          maxLength: 80
+        postal_code:
+          type: string
+          pattern: ^\d{5}$
+          maxLength: 5
+        country:
+          allOf:
+          - $ref: '#/components/schemas/CountryEnum'
+          default: SA
+          description: |-
+            Delivery is limited to Saudi Arabia.
+
+            * `SA` - SA
+        company_name:
+          type: string
+          maxLength: 200
+        vat_number:
+          oneOf:
+          - type: string
+            pattern: ^3\d{13}3$
+            maxLength: 15
+          - type: string
+            maxLength: 0
+        cr_number:
+          oneOf:
+          - type: string
+            pattern: ^\d{10}$
+            maxLength: 10
+          - type: string
+            maxLength: 0
+      required:
+      - building_number
+      - city
+      - district
+      - name
+      - phone
+      - postal_code
+      - street
+    BillingAddressRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        phone:
+          type: string
+          minLength: 1
+          pattern: ^\+9665\d{8}$
+          maxLength: 16
+        email:
+          oneOf:
+          - type: string
+            format: email
+          - type: string
+            maxLength: 0
+        street:
+          type: string
+          minLength: 1
+          maxLength: 120
+        building_number:
+          type: string
+          minLength: 1
+          pattern: ^\d{4}$
+          maxLength: 4
+        additional_number:
+          oneOf:
+          - type: string
+            pattern: ^\d{4}$
+            maxLength: 4
+          - type: string
+            maxLength: 0
+        district:
+          type: string
+          minLength: 1
+          maxLength: 120
+        city:
+          type: string
+          minLength: 1
+          maxLength: 80
+        postal_code:
+          type: string
+          minLength: 1
+          pattern: ^\d{5}$
+          maxLength: 5
+        country:
+          allOf:
+          - $ref: '#/components/schemas/CountryEnum'
+          default: SA
+          description: |-
+            Delivery is limited to Saudi Arabia.
+
+            * `SA` - SA
+        company_name:
+          type: string
+          maxLength: 200
+        vat_number:
+          oneOf:
+          - type: string
+            pattern: ^3\d{13}3$
+            maxLength: 15
+          - type: string
+            maxLength: 0
+        cr_number:
+          oneOf:
+          - type: string
+            pattern: ^\d{10}$
+            maxLength: 10
+          - type: string
+            maxLength: 0
+      required:
+      - building_number
+      - city
+      - district
+      - name
+      - phone
+      - postal_code
+      - street
+    Buyer:
+      type: object
+      properties:
+        kind:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        company_name:
+          type: string
+        vat_number:
+          type: string
+      required:
+      - company_name
+      - email
+      - kind
+      - name
+      - vat_number
+    Cart:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+        version:
+          type: integer
+          description: Send as If-Match to make a write conditional.
+        currency:
+          type: string
+        customer:
+          allOf:
+          - $ref: '#/components/schemas/CustomerRef'
+          nullable: true
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CartItemOut'
+        coupon:
+          allOf:
+          - $ref: '#/components/schemas/CartCoupon'
+          nullable: true
+        shipping_address:
+          allOf:
+          - $ref: '#/components/schemas/Address'
+          nullable: true
+        billing_address:
+          allOf:
+          - $ref: '#/components/schemas/BillingAddress'
+          nullable: true
+        payment_method:
+          allOf:
+          - $ref: '#/components/schemas/PaymentMethodOut'
+          nullable: true
+        invoice_kind:
+          $ref: '#/components/schemas/InvoiceKindEnum'
+        totals:
+          $ref: '#/components/schemas/Totals'
+        checkout_readiness:
+          $ref: '#/components/schemas/Readiness'
+        warnings:
+          type: array
+          items:
+            $ref: '#/components/schemas/Warning'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+      - billing_address
+      - checkout_readiness
+      - coupon
+      - created_at
+      - currency
+      - customer
+      - id
+      - invoice_kind
+      - items
+      - payment_method
+      - shipping_address
+      - status
+      - totals
+      - updated_at
+      - version
+      - warnings
+    CartCoupon:
+      type: object
+      properties:
+        code:
+          type: string
+        description:
+          type: string
+        applicable:
+          type: boolean
+        reason:
+          allOf:
+          - $ref: '#/components/schemas/CouponReason'
+          nullable: true
+        discount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+      required:
+      - applicable
+      - code
+      - description
+      - discount
+      - reason
+    CartItemOut:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        product:
+          $ref: '#/components/schemas/ProductRef'
+        quantity:
+          type: integer
+        unit_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        subtotal:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        discount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        net:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          description: Taxable amount after discount.
+        vat:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        total:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          description: Amount including VAT.
+        available:
+          type: boolean
+      required:
+      - available
+      - discount
+      - id
+      - net
+      - product
+      - quantity
+      - subtotal
+      - total
+      - unit_price
+      - vat
+    CheckoutRequest:
+      type: object
+      properties:
+        payment_token:
+          type: string
+          nullable: true
+          minLength: 1
+          description: Single-use token from the gateway's client SDK.
+          maxLength: 128
+        expected_total:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          nullable: true
+          description: The total the shopper saw. Checkout fails with CART_TOTAL_CHANGED
+            if it moved.
+        po_number:
+          type: string
+          default: ''
+          maxLength: 64
+    CountryEnum:
+      enum:
+      - SA
+      type: string
+      description: '* `SA` - SA'
+    CouponReason:
+      type: object
+      properties:
+        code:
+          type: string
+        detail:
+          type: string
+      required:
+      - code
+      - detail
+    CreatedCart:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+        version:
+          type: integer
+          description: Send as If-Match to make a write conditional.
+        currency:
+          type: string
+        customer:
+          allOf:
+          - $ref: '#/components/schemas/CustomerRef'
+          nullable: true
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CartItemOut'
+        coupon:
+          allOf:
+          - $ref: '#/components/schemas/CartCoupon'
+          nullable: true
+        shipping_address:
+          allOf:
+          - $ref: '#/components/schemas/Address'
+          nullable: true
+        billing_address:
+          allOf:
+          - $ref: '#/components/schemas/BillingAddress'
+          nullable: true
+        payment_method:
+          allOf:
+          - $ref: '#/components/schemas/PaymentMethodOut'
+          nullable: true
+        invoice_kind:
+          $ref: '#/components/schemas/InvoiceKindEnum'
+        totals:
+          $ref: '#/components/schemas/Totals'
+        checkout_readiness:
+          $ref: '#/components/schemas/Readiness'
+        warnings:
+          type: array
+          items:
+            $ref: '#/components/schemas/Warning'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        cart_token:
+          type: string
+          nullable: true
+          description: Guest carts only. Send it back as X-Cart-Token. Shown once.
+      required:
+      - billing_address
+      - cart_token
+      - checkout_readiness
+      - coupon
+      - created_at
+      - currency
+      - customer
+      - id
+      - invoice_kind
+      - items
+      - payment_method
+      - shipping_address
+      - status
+      - totals
+      - updated_at
+      - version
+      - warnings
+    Customer:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+        kind:
+          type: string
+        company_name:
+          type: string
+        vat_number:
+          type: string
+        credit_approved:
+          type: boolean
+        credit_limit:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+      required:
+      - company_name
+      - credit_approved
+      - credit_limit
+      - email
+      - id
+      - kind
+      - name
+      - vat_number
+    CustomerRef:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        kind:
+          type: string
+      required:
+      - id
+      - kind
+      - name
+    FieldError:
+      type: object
+      properties:
+        field:
+          type: string
+          nullable: true
+        code:
+          type: string
+        message:
+          type: string
+      required:
+      - code
+      - field
+      - message
+    Invoice:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        number:
+          type: string
+        doc_type:
+          type: string
+        kind:
+          $ref: '#/components/schemas/InvoiceKindEnum'
+        status:
+          type: string
+          description: issued, pending_retry, reported, cleared or rejected.
+        uuid:
+          type: string
+          format: uuid
+        icv:
+          type: integer
+          description: Invoice counter value in the device's hash chain.
+        invoice_hash:
+          type: string
+        previous_invoice_hash:
+          type: string
+        issued_at:
+          type: string
+          format: date-time
+        qr_code:
+          type: string
+          description: Base64 TLV payload to render as a QR code.
+        seller:
+          type: object
+          additionalProperties: {}
+        buyer:
+          type: object
+          additionalProperties: {}
+        taxable_amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        vat_total:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        total:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        zatca_warnings:
+          type: array
+          items:
+            type: object
+            additionalProperties: {}
+        xml_url:
+          type: string
+      required:
+      - buyer
+      - doc_type
+      - icv
+      - id
+      - invoice_hash
+      - issued_at
+      - kind
+      - number
+      - previous_invoice_hash
+      - qr_code
+      - seller
+      - status
+      - taxable_amount
+      - total
+      - uuid
+      - vat_total
+      - xml_url
+      - zatca_warnings
+    InvoiceKindEnum:
+      enum:
+      - simplified
+      - standard
+      type: string
+      description: |-
+        * `simplified` - simplified
+        * `standard` - standard
+    InvoiceSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        number:
+          type: string
+        kind:
+          type: string
+        status:
+          type: string
+        issued_at:
+          type: string
+          format: date-time
+      required:
+      - id
+      - issued_at
+      - kind
+      - number
+      - status
+    MethodEnum:
+      enum:
+      - card
+      - apple_pay
+      - cod
+      - net_terms
+      type: string
+      description: |-
+        * `card` - Card
+        * `apple_pay` - Apple Pay
+        * `cod` - Cod
+        * `net_terms` - Net Terms
+    MissingEnum:
+      enum:
+      - items
+      - shipping_address
+      - payment_method
+      - billing_address
+      - available_items
+      - applicable_coupon
+      type: string
+      description: |-
+        * `items` - items
+        * `shipping_address` - shipping_address
+        * `payment_method` - payment_method
+        * `billing_address` - billing_address
+        * `available_items` - available_items
+        * `applicable_coupon` - applicable_coupon
+    NextAction:
+      type: object
+      properties:
+        type:
+          $ref: '#/components/schemas/NextActionTypeEnum'
+        url:
+          type: string
+          format: uri
+      required:
+      - type
+      - url
+    NextActionTypeEnum:
+      enum:
+      - redirect
+      type: string
+      description: '* `redirect` - redirect'
+    Order:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        number:
+          type: string
+        status:
+          type: string
+        currency:
+          type: string
+        lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderLine'
+        totals:
+          $ref: '#/components/schemas/OrderTotals'
+        coupon_code:
+          type: string
+        buyer:
+          $ref: '#/components/schemas/Buyer'
+        shipping_address:
+          allOf:
+          - $ref: '#/components/schemas/Address'
+          nullable: true
+        billing_address:
+          allOf:
+          - $ref: '#/components/schemas/BillingAddress'
+          nullable: true
+        po_number:
+          type: string
+        invoice_kind:
+          type: string
+        payment:
+          allOf:
+          - $ref: '#/components/schemas/OrderPayment'
+          nullable: true
+        invoice:
+          allOf:
+          - $ref: '#/components/schemas/InvoiceSummary'
+          nullable: true
+        expires_at:
+          type: string
+          format: date-time
+          nullable: true
+        placed_at:
+          type: string
+          format: date-time
+        paid_at:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+      - billing_address
+      - buyer
+      - coupon_code
+      - currency
+      - expires_at
+      - id
+      - invoice
+      - invoice_kind
+      - lines
+      - number
+      - paid_at
+      - payment
+      - placed_at
+      - po_number
+      - shipping_address
+      - status
+      - totals
+    OrderLine:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        product_id:
+          type: string
+          format: uuid
+          nullable: true
+        sku:
+          type: string
+        name:
+          type: string
+        quantity:
+          type: integer
+        unit_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        subtotal:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        discount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        net:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        vat:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        total:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+      required:
+      - discount
+      - id
+      - name
+      - net
+      - product_id
+      - quantity
+      - sku
+      - subtotal
+      - total
+      - unit_price
+      - vat
+    OrderPayment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        method:
+          type: string
+        gateway:
+          type: string
+        status:
+          type: string
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        next_action:
+          allOf:
+          - $ref: '#/components/schemas/NextAction'
+          nullable: true
+        failure_code:
+          type: string
+        failure_message:
+          type: string
+      required:
+      - amount
+      - failure_code
+      - failure_message
+      - gateway
+      - id
+      - method
+      - next_action
+      - status
+    OrderTotals:
+      type: object
+      properties:
+        prices_include_vat:
+          type: boolean
+        vat_rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        subtotal:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        discount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        shipping:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        taxable_amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        vat:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        total:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+      required:
+      - discount
+      - prices_include_vat
+      - shipping
+      - subtotal
+      - taxable_amount
+      - total
+      - vat
+      - vat_rate
+    OutcomeEnum:
+      enum:
+      - applied
+      - duplicate
+      - ignored
+      type: string
+      description: |-
+        * `applied` - applied
+        * `duplicate` - duplicate
+        * `ignored` - ignored
+    PatchedUpdateItemRequest:
+      type: object
+      properties:
+        quantity:
+          type: integer
+          maximum: 999
+          minimum: 1
+    PaymentMethod:
+      type: object
+      properties:
+        method:
+          type: string
+        gateway:
+          type: string
+        display_name:
+          type: string
+        requires_token:
+          type: boolean
+      required:
+      - display_name
+      - gateway
+      - method
+      - requires_token
+    PaymentMethodInputRequest:
+      type: object
+      properties:
+        method:
+          $ref: '#/components/schemas/MethodEnum'
+      required:
+      - method
+    PaymentMethodOut:
+      type: object
+      properties:
+        method:
+          type: string
+        gateway:
+          type: string
+        display_name:
+          type: string
+      required:
+      - display_name
+      - gateway
+      - method
+    Problem:
+      type: object
+      properties:
+        type:
+          type: string
+        title:
+          type: string
+        status:
+          type: integer
+        code:
+          type: string
+          description: Stable machine-readable error code.
+        detail:
+          type: string
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/FieldError'
+      required:
+      - code
+      - status
+      - title
+      - type
+    Product:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        sku:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        kind:
+          type: string
+        price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          description: In the store's price basis (see GET /store).
+        in_stock:
+          type: boolean
+        stock_level:
+          type: integer
+          nullable: true
+          description: Units available, or null when not tracked.
+        max_per_order:
+          type: integer
+        image_url:
+          type: string
+      required:
+      - description
+      - id
+      - image_url
+      - in_stock
+      - kind
+      - max_per_order
+      - name
+      - price
+      - sku
+      - stock_level
+    ProductRef:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        sku:
+          type: string
+        name:
+          type: string
+        kind:
+          type: string
+        image_url:
+          type: string
+      required:
+      - id
+      - image_url
+      - kind
+      - name
+      - sku
+    Readiness:
+      type: object
+      properties:
+        ready:
+          type: boolean
+        missing:
+          type: array
+          items:
+            $ref: '#/components/schemas/MissingEnum'
+      required:
+      - missing
+      - ready
+    Store:
+      type: object
+      properties:
+        handle:
+          type: string
+        name:
+          type: string
+        currency:
+          type: string
+        prices_include_vat:
+          type: boolean
+        vat_rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        shipping_fee:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        free_shipping_threshold:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          nullable: true
+        b2b_enabled:
+          type: boolean
+      required:
+      - b2b_enabled
+      - currency
+      - free_shipping_threshold
+      - handle
+      - name
+      - prices_include_vat
+      - shipping_fee
+      - vat_rate
+    Suggestion:
+      type: object
+      properties:
+        strategy:
+          type: string
+        type:
+          $ref: '#/components/schemas/SuggestionTypeEnum'
+        headline:
+          type: string
+        reason_code:
+          type: string
+        product:
+          allOf:
+          - $ref: '#/components/schemas/Product'
+          nullable: true
+        action:
+          allOf:
+          - $ref: '#/components/schemas/SuggestionAction'
+          nullable: true
+        data:
+          type: object
+          additionalProperties: {}
+      required:
+      - action
+      - data
+      - headline
+      - product
+      - reason_code
+      - strategy
+      - type
+    SuggestionAction:
+      type: object
+      properties:
+        type:
+          $ref: '#/components/schemas/SuggestionActionTypeEnum'
+        product_id:
+          type: string
+          format: uuid
+        quantity:
+          type: integer
+      required:
+      - product_id
+      - quantity
+      - type
+    SuggestionActionTypeEnum:
+      enum:
+      - add_item
+      type: string
+      description: '* `add_item` - add_item'
+    SuggestionList:
+      type: object
+      properties:
+        suggestions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Suggestion'
+      required:
+      - suggestions
+    SuggestionTypeEnum:
+      enum:
+      - product
+      - message
+      type: string
+      description: |-
+        * `product` - product
+        * `message` - message
+    TokenRequestRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+        password:
+          type: string
+          minLength: 1
+          maxLength: 128
+      required:
+      - email
+      - password
+    TokenResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        token_type:
+          type: string
+        expires_at:
+          type: string
+          format: date-time
+        customer:
+          $ref: '#/components/schemas/Customer'
+      required:
+      - customer
+      - expires_at
+      - token
+      - token_type
+    Totals:
+      type: object
+      properties:
+        prices_include_vat:
+          type: boolean
+        vat_rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+        subtotal:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          description: Items before discount, in the store's price basis.
+        discount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        shipping:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          description: Shipping fee before any shipping discount.
+        taxable_amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        vat:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        total:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          description: Amount payable, including VAT.
+      required:
+      - discount
+      - prices_include_vat
+      - shipping
+      - subtotal
+      - taxable_amount
+      - total
+      - vat
+      - vat_rate
+    Warning:
+      type: object
+      properties:
+        code:
+          type: string
+        detail:
+          type: string
+        item_id:
+          type: string
+          format: uuid
+        previous_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        current_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        reason:
+          type: string
+      required:
+      - code
+      - detail
+    WebhookAck:
+      type: object
+      properties:
+        received:
+          type: boolean
+        outcome:
+          $ref: '#/components/schemas/OutcomeEnum'
+      required:
+      - outcome
+      - received
+  securitySchemes:
+    customerToken:
+      type: http
+      scheme: bearer
+      description: Store-scoped customer token from POST /api/v1/auth/token.
