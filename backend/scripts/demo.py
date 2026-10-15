@@ -2,6 +2,7 @@ import argparse
 import base64
 import re
 import sys
+import time
 import uuid
 
 import requests
@@ -51,6 +52,15 @@ class Demo:
         if not condition:
             self.failures += 1
         print(f"  [{mark}] {label}{': ' + detail if detail else ''}")
+
+    def wait_for_invoice(self, order_id, store, *, token=None, cart_token=None, timeout=30):
+        deadline = time.monotonic() + timeout
+        while True:
+            response = self.call("GET", f"/orders/{order_id}/invoice", store, token=token, cart_token=cart_token)
+            settled = response.status_code == 200 and response.json().get("status") in ("reported", "cleared")
+            if settled or time.monotonic() > deadline:
+                return response
+            time.sleep(0.5)
 
     def products(self, store):
         response = self.call("GET", "/products?limit=50", store)
@@ -159,8 +169,9 @@ class Demo:
         challenge = order["payment"]["next_action"]["url"]
         requests.post(challenge, data={"outcome": "approve"}, allow_redirects=False, timeout=15)
         confirmed = self.call("POST", f"/orders/{order['id']}/payment/confirm", B2C, cart_token=cart_token).json()
+        self.wait_for_invoice(order["id"], B2C, cart_token=cart_token)
         self.check("payment confirmed after 3-D Secure", confirmed["status"] == "paid", confirmed["number"])
-        invoice = self.call("GET", f"/orders/{order['id']}/invoice", B2C, cart_token=cart_token)
+        invoice = self.wait_for_invoice(order["id"], B2C, cart_token=cart_token)
         payload = invoice.json()
         self.check(
             "simplified tax invoice issued and reported", payload.get("status") == "reported", payload.get("number", "")
@@ -256,7 +267,7 @@ class Demo:
             headers={"Idempotency-Key": str(uuid.uuid4())},
         ).json()
         self.check("order confirmed on net terms", order["status"] == "confirmed", order["number"])
-        invoice = self.call("GET", f"/orders/{order['id']}/invoice", B2B, token=token).json()
+        invoice = self.wait_for_invoice(order["id"], B2B, token=token).json()
         self.check(
             "standard invoice cleared",
             invoice.get("status") == "cleared" and invoice.get("kind") == "standard",
