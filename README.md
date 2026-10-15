@@ -234,7 +234,7 @@ sequenceDiagram
     alt key already completed
         API-->>Shopper: replay the order's current state
     end
-    rect rgb(235, 238, 255)
+    rect rgba(99, 102, 241, 0.14)
         note over API,DB: Transaction A, no network I/O
         API->>DB: lock cart, re-price, compare expected_total
         API->>DB: reserve stock (UPDATE stock = stock - q WHERE stock >= q)
@@ -243,7 +243,7 @@ sequenceDiagram
     end
     API->>GW: create_payment(reference = payment id)
     GW-->>API: succeeded / requires_action / failed / timeout
-    rect rgb(235, 255, 240)
+    rect rgba(16, 185, 129, 0.14)
         note over API,DB: Transaction B, one state machine for every path
         API->>DB: paid, or release stock and coupon exactly once
     end
