@@ -1,0 +1,57 @@
+@import "tailwindcss";
+
+@theme {
+  --color-paper: var(--paper);
+  --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-ok: var(--ok);
+  --color-warn: var(--warn);
+  --color-bad: var(--bad);
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+:root {
+  --paper: #f6f4ef;
+  --surface: #ffffff;
+  --ink: #17181c;
+  --muted: #646976;
+  --line: #e3dfd6;
+  --accent: #3b3fd8;
+  --accent-ink: #ffffff;
+  --ok: #0e7c4a;
+  --warn: #a15c07;
+  --bad: #b42318;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #0f1115;
+    --surface: #181b22;
+    --ink: #eceef3;
+    --muted: #9ba2af;
+    --line: #2a2e38;
+    --accent: #9195f7;
+    --accent-ink: #0f1115;
+    --ok: #4ccb8b;
+    --warn: #f0b04f;
+    --bad: #ff7b72;
+    color-scheme: dark;
+  }
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
