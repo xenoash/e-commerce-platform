@@ -4,13 +4,14 @@ import { useEffect, useRef } from "react";
 import { Link, useParams } from "react-router";
 
 import { unwrap, type Invoice, type Order } from "../api/client";
-import { useInvoice, useOrder } from "../api/hooks";
+import { useInvoice, useOrder, useOrderApi } from "../api/hooks";
 import { Button, Card, Money, ProblemNotice, StatusBadge } from "../components/ui";
 import { displayLineAmount, paymentLabel } from "../lib/labels";
 import { useSession } from "../lib/session-context";
 
 function useConfirmOnReturn(order: Order | undefined) {
-  const { api, session } = useSession();
+  const { session } = useSession();
+  const api = useOrderApi(order?.id);
   const queryClient = useQueryClient();
   const attempted = useRef(false);
   const confirm = useMutation({
@@ -29,7 +30,7 @@ function useConfirmOnReturn(order: Order | undefined) {
 }
 
 function InvoiceCard({ order, invoice }: { order: Order; invoice: Invoice | undefined }) {
-  const { api } = useSession();
+  const api = useOrderApi(order.id);
 
   async function downloadXml() {
     const { data, response } = await api.GET("/api/v1/orders/{order_id}/invoice", {

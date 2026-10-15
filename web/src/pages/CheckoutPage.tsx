@@ -58,7 +58,7 @@ const MISSING_LABELS: Record<string, string> = {
 };
 
 export function CheckoutPage() {
-  const { session, api } = useSession();
+  const { session, api, rememberOrder } = useSession();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const cart = useCart().data;
@@ -84,6 +84,7 @@ export function CheckoutPage() {
       );
     },
     onSuccess: (order: Order) => {
+      rememberOrder(order.id);
       queryClient.invalidateQueries({ queryKey: ["cart", session.store] });
       const redirect = order.payment?.next_action?.url;
       if (redirect) window.location.assign(redirect);

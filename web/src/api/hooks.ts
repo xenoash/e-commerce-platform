@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMemo } from "react";
 
-import { useSession } from "../lib/session-context";
-import { ApiProblem, unwrap, type Address, type BillingAddress, type Cart, type Order } from "./client";
+import { orderAccessToken, useSession } from "../lib/session-context";
+import { ApiProblem, apiFor, unwrap, type Address, type BillingAddress, type Cart, type Order } from "./client";
 
 export function useStoreSettings() {
   const { api, session } = useSession();
@@ -147,8 +148,18 @@ export function useCartMutations() {
   return { addItem, setQuantity, removeItem, applyCoupon, removeCoupon, setShipping, setBilling, setPaymentMethod };
 }
 
+export function useOrderApi(orderId: string | undefined) {
+  const { session } = useSession();
+  const cartToken = orderAccessToken(session, orderId);
+  return useMemo(
+    () => apiFor({ store: session.store, token: session.token, cartToken }),
+    [session.store, session.token, cartToken],
+  );
+}
+
 export function useOrder(orderId: string | undefined) {
-  const { api, session } = useSession();
+  const { session } = useSession();
+  const api = useOrderApi(orderId);
   return useQuery({
     queryKey: ["order", session.store, orderId],
     enabled: Boolean(orderId),
@@ -159,11 +170,14 @@ export function useOrder(orderId: string | undefined) {
       const waiting = order.status === "pending_payment" || !order.invoice || order.invoice.status === "issued";
       return waiting ? 2000 : false;
     },
+    refetchIntervalInBackground: true,
+    refetchOnWindowFocus: true,
   });
 }
 
 export function useInvoice(order: Order | undefined) {
-  const { api, session } = useSession();
+  const { session } = useSession();
+  const api = useOrderApi(order?.id);
   const ready = Boolean(order?.invoice && ["reported", "cleared", "pending_retry"].includes(order.invoice.status));
   return useQuery({
     queryKey: ["invoice", session.store, order?.id, order?.invoice?.status],

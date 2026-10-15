@@ -9,6 +9,7 @@ export type Session = {
   customerKind?: string;
   cartId?: string;
   cartToken?: string;
+  orderTokens?: Record<string, string>;
 };
 
 export type SessionContextValue = {
@@ -17,6 +18,7 @@ export type SessionContextValue = {
   update: (patch: Partial<Session>) => void;
   signOut: () => void;
   forgetCart: () => void;
+  rememberOrder: (orderId: string) => void;
 };
 
 export const SessionContext = createContext<SessionContextValue | null>(null);
@@ -38,6 +40,10 @@ export function writeSession(session: Session) {
   } catch {
     return;
   }
+}
+
+export function orderAccessToken(session: Session, orderId: string | undefined) {
+  return (orderId && session.orderTokens?.[orderId]) || session.cartToken;
 }
 
 export function useSession() {
