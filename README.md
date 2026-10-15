@@ -37,7 +37,7 @@ Every API call names its tenant in the `X-Store` header: `oud-and-amber` (B2C, V
 | ZATCA invoices | `apps/invoicing`: UBL 2.1, XAdES signature, QR, hash chain, reporting and clearance |
 | Coupon constraints (bonus) | `apps/promotions/rules.py`: min subtotal, cities, customer kind, first order |
 | B2B orders (bonus) | Business accounts, credit limits, PO numbers, standard tax invoices cleared by ZATCA |
-| Race conditions, docs, tests | 147 backend tests (94% coverage) including threaded tests against real Postgres |
+| Race conditions, docs, tests | 147 backend tests (95% coverage) including threaded tests against real Postgres |
 
 ## Architecture
 
