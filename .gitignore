@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+coverage.xml
+staticfiles/
+celerybeat-schedule*
+node_modules/
+web/dist/
+.env
+.DS_Store
+*.log

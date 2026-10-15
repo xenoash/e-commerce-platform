@@ -1,0 +1,74 @@
+name: ecommerce-platform
+
+x-backend: &backend
+  build: ./backend
+  environment: &backend-env
+    POSTGRES_HOST: db
+    POSTGRES_PORT: "5432"
+    REDIS_URL: redis://redis:6379/0
+    SECRET_KEY: local-development-secret-key-change-me
+    DEBUG: "true"
+    ALLOWED_HOSTS: localhost,127.0.0.1,api
+    PUBLIC_API_URL: http://localhost:8100
+    INTERNAL_API_URL: http://api:8000
+    STOREFRONT_URL: http://localhost:5180
+  depends_on:
+    db:
+      condition: service_healthy
+    redis:
+      condition: service_started
+
+services:
+  db:
+    image: postgres:18
+    environment:
+      POSTGRES_PASSWORD: postgres
+    ports: ["55432:5432"]
+    volumes:
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ecommerce"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  redis:
+    image: redis:7-alpine
+    ports: ["56379:6379"]
+
+  api:
+    <<: *backend
+    command: sh -c "python manage.py migrate --noinput && gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3 --threads 4 --timeout 30"
+    ports: ["8100:8000"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/readyz')"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  worker:
+    <<: *backend
+    command: celery -A config worker --loglevel=info --concurrency=4
+    depends_on:
+      api:
+        condition: service_healthy
+
+  beat:
+    <<: *backend
+    command: celery -A config beat --loglevel=info --schedule /tmp/celerybeat-schedule
+    depends_on:
+      api:
+        condition: service_healthy
+
+  web:
+    build: ./web
+    environment:
+      API_PROXY_TARGET: http://api:8000
+    ports: ["5180:5180"]
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  pgdata:
