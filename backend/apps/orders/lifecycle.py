@@ -32,6 +32,7 @@ def reserve_stock(lines):
                     "product_id": str(line["product_id"]),
                     "requested": line["quantity"],
                     "available": product.stock if product and product.is_active else 0,
+                    "reason": "insufficient_stock" if product and product.is_active else "discontinued",
                 }
             )
     return shortages

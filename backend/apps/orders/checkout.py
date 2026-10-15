@@ -58,12 +58,11 @@ def _buyer_snapshot(cart):
 
 
 def _assert_checkout_ready(view, expected_total):
+    if any(entry["reason"] == "discontinued" for entry in view.unavailable):
+        raise Problem(409, ErrorCode.ITEM_UNAVAILABLE, "Some items are no longer sold.", items=view.unavailable)
     if view.unavailable:
         raise Problem(
-            409,
-            ErrorCode.ITEM_UNAVAILABLE,
-            "Some items are no longer available in that quantity.",
-            items=view.unavailable,
+            409, ErrorCode.OUT_OF_STOCK, "Some items sold out while you were checking out.", items=view.unavailable
         )
     if view.coupon is not None and not view.coupon.applicable:
         raise Problem(

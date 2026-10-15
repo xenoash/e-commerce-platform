@@ -61,6 +61,11 @@ Codes, grouped:
 | Orders and invoices | `ORDER_NOT_FOUND`, `INVOICE_NOT_READY`, `WEBHOOK_SIGNATURE_INVALID` |
 | Platform | `VALIDATION_FAILED`, `MALFORMED_REQUEST`, `RATE_LIMITED`, `RESOURCE_BUSY`, `TIMEOUT`, `INTERNAL_ERROR` |
 
+Stock problems name the affected lines: `OUT_OF_STOCK` (not enough left) and `ITEM_UNAVAILABLE` (no longer sold)
+carry `items[]` with `item_id`, `product_id`, `requested`, `available` and a `reason` of `insufficient_stock` or
+`discontinued`. A product that sells out while a shopper is checking out always reads as `OUT_OF_STOCK`, whichever
+step catches it.
+
 ## Checkout and idempotency
 
 Generate one `Idempotency-Key` per checkout attempt.

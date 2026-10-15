@@ -267,7 +267,13 @@ def build_cart_view(cart, *, coupon_override=None):
         product = item.product
         if not product.is_active:
             unavailable.append(
-                {"item_id": str(item.pk), "product_id": str(product.pk), "requested": item.quantity, "available": 0}
+                {
+                    "item_id": str(item.pk),
+                    "product_id": str(product.pk),
+                    "requested": item.quantity,
+                    "available": 0,
+                    "reason": "discontinued",
+                }
             )
             warnings.append(
                 {
@@ -283,11 +289,12 @@ def build_cart_view(cart, *, coupon_override=None):
                     "product_id": str(product.pk),
                     "requested": item.quantity,
                     "available": product.stock,
+                    "reason": "insufficient_stock",
                 }
             )
             warnings.append(
                 {
-                    "code": ErrorCode.ITEM_UNAVAILABLE,
+                    "code": ErrorCode.OUT_OF_STOCK,
                     "item_id": str(item.pk),
                     "detail": f"Only {product.stock} of {product.name} left.",
                 }

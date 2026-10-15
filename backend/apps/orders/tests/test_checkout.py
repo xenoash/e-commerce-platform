@@ -266,3 +266,27 @@ def test_invoice_waits_for_clearance_before_the_buyer_sees_it(paid_flow):
     Invoice.objects.update(kind="standard", status="issued")
     pending = client.get(f"/api/v1/orders/{response.data['id']}/invoice")
     assert (pending.status_code, pending.data["code"]) == (409, "INVOICE_NOT_READY")
+
+
+def test_stock_gone_before_checkout_reads_as_out_of_stock(guest_cart, product):
+    client, cart_id = guest_cart
+    ready_cart(client, cart_id, product, quantity=2)
+    Product.objects.filter(pk=product.pk).update(stock=1)
+    response = checkout(client, cart_id, payment_token="tok_success")
+    assert (response.status_code, response.data["code"]) == (409, "OUT_OF_STOCK")
+    assert response.data["items"][0] | {"item_id": None} == {
+        "item_id": None,
+        "product_id": str(product.pk),
+        "requested": 2,
+        "available": 1,
+        "reason": "insufficient_stock",
+    }
+
+
+def test_discontinued_product_reads_as_unavailable(guest_cart, product):
+    client, cart_id = guest_cart
+    ready_cart(client, cart_id, product)
+    Product.objects.filter(pk=product.pk).update(is_active=False)
+    response = checkout(client, cart_id, payment_token="tok_success")
+    assert (response.status_code, response.data["code"]) == (409, "ITEM_UNAVAILABLE")
+    assert response.data["items"][0]["reason"] == "discontinued"
