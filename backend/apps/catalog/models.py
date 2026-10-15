@@ -12,6 +12,7 @@ class Product(TenantModel):
 
     sku = models.CharField(max_length=64)
     name = models.CharField(max_length=200)
+    name_ar = models.CharField(max_length=200, blank=True)
     description = models.TextField(blank=True)
     kind = models.CharField(max_length=16, choices=Kind.choices, default=Kind.PHYSICAL)
     price = models.DecimalField(max_digits=12, decimal_places=2)

@@ -146,6 +146,7 @@ def _create_order(cart, view, data, gateway):
                 position=row["position"],
                 sku=row["product"].sku,
                 name=row["product"].name,
+                name_ar=row["product"].name_ar,
                 kind=row["product"].kind,
                 track_stock=row["track_stock"],
                 quantity=row["quantity"],

@@ -296,6 +296,7 @@ def build_cart_view(cart, *, coupon_override=None):
                 {
                     "code": ErrorCode.OUT_OF_STOCK,
                     "item_id": str(item.pk),
+                    "available": product.stock,
                     "detail": f"Only {product.stock} of {product.name} left.",
                 }
             )

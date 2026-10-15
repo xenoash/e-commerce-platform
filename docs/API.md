@@ -49,6 +49,10 @@ Errors are RFC 9457 problem documents (`application/problem+json`) with a stable
 }
 ```
 
+`detail` is English and meant for developers. Clients localise from `code` and the problem's data fields, never by
+parsing `detail`; the storefront does exactly that for Arabic. Products carry an optional `name_ar`, and invoice lines
+print as "English | Arabic".
+
 Codes, grouped:
 
 | Group | Codes |

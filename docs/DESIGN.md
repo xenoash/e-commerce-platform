@@ -86,6 +86,8 @@ features, and they are exactly what checkout needs. Conventions:
   | 422 | Rule violation |
   | 428 | Missing `Idempotency-Key` |
 
+- Every error, warning and suggestion carries a stable code plus its data (`remaining`, `available`, `reason`), so a
+  client can localise without parsing English. The storefront ships English and Arabic this way.
 - Money is a decimal string. VAT basis is explicit (`prices_include_vat`), and each line carries `net`, `vat` and
   `total`.
 

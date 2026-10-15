@@ -111,9 +111,9 @@ class Command(BaseCommand):
             seller=Party(store.legal_name, store.vat_number, store.cr_number, seller_address),
             buyer=buyer,
             lines=(
-                line("Oud Royale 50ml", 2, "86.95", "173.90", "26.08"),
-                line("Oud Royale 50ml", 1, "86.96", "86.96", "13.05"),
-                line("Shipping", 1, "21.74", "21.74", "3.26"),
+                line("Oud Royale 50ml | عود رويال 50 مل", 2, "86.95", "173.90", "26.08"),
+                line("Oud Royale 50ml | عود رويال 50 مل", 1, "86.96", "86.96", "13.05"),
+                line("Shipping | الشحن", 1, "21.74", "21.74", "3.26"),
             ),
             taxable_amount=Decimal("282.60"),
             vat_total=Decimal("42.39"),

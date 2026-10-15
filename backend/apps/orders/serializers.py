@@ -8,6 +8,7 @@ class OrderLineSerializer(serializers.Serializer):
     product_id = serializers.UUIDField(allow_null=True)
     sku = serializers.CharField()
     name = serializers.CharField()
+    name_ar = serializers.CharField(allow_blank=True)
     quantity = serializers.IntegerField()
     unit_price = serializers.DecimalField(**MONEY)
     subtotal = serializers.DecimalField(**MONEY)
@@ -96,6 +97,7 @@ def order_payload(order):
                 "product_id": line.product_id,
                 "sku": line.sku,
                 "name": line.name,
+                "name_ar": line.name_ar,
                 "quantity": line.quantity,
                 "unit_price": line.unit_price,
                 "subtotal": line.subtotal,

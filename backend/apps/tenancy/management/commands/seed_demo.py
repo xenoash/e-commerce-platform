@@ -39,14 +39,14 @@ STORES = [
             ],
         },
         "products": [
-            ("OUD-ROY-50", "Oud Royale 50ml", "physical", "450.00", 40, False),
-            ("AMB-NGT-100", "Amber Nights 100ml", "physical", "320.00", 25, False),
-            ("MSK-THR-30", "Musk Tahara 30ml", "physical", "95.00", 3, False),
-            ("ROS-TAF-50", "Taif Rose 50ml", "physical", "280.00", 18, False),
-            ("BKH-BOX", "Bakhoor Incense Box", "physical", "60.00", 60, False),
-            ("ATM-TRV", "Travel Atomizer", "physical", "35.00", 100, False),
-            ("OUD-LTD-1", "Limited Edition Oud", "physical", "1200.00", 1, False),
-            ("GIFT-WRAP", "Gift Wrapping", "service", "15.00", None, True),
+            ("OUD-ROY-50", "Oud Royale 50ml", "عود رويال 50 مل", "physical", "450.00", 40, False),
+            ("AMB-NGT-100", "Amber Nights 100ml", "ليالي العنبر 100 مل", "physical", "320.00", 25, False),
+            ("MSK-THR-30", "Musk Tahara 30ml", "مسك الطهارة 30 مل", "physical", "95.00", 3, False),
+            ("ROS-TAF-50", "Taif Rose 50ml", "ورد طائفي 50 مل", "physical", "280.00", 18, False),
+            ("BKH-BOX", "Bakhoor Incense Box", "علبة بخور", "physical", "60.00", 60, False),
+            ("ATM-TRV", "Travel Atomizer", "بخاخ عطر للسفر", "physical", "35.00", 100, False),
+            ("OUD-LTD-1", "Limited Edition Oud", "عود إصدار محدود", "physical", "1200.00", 1, False),
+            ("GIFT-WRAP", "Gift Wrapping", "تغليف هدية", "service", "15.00", None, True),
         ],
         "recommendations": [
             ("OUD-ROY-50", "BKH-BOX", "Pairs with Oud Royale"),
@@ -113,11 +113,11 @@ STORES = [
             ],
         },
         "products": [
-            ("PAP-A4-5", "A4 Paper, 5 reams", "physical", "95.00", 500, False),
-            ("CHR-ERG", "Ergonomic Office Chair", "physical", "850.00", 30, False),
-            ("TNR-BLK", "Black Toner Cartridge", "physical", "310.00", 80, False),
-            ("WBD-120", "Whiteboard 120cm", "physical", "220.00", 15, False),
-            ("SVC-INSTALL", "Furniture Installation", "service", "150.00", None, False),
+            ("PAP-A4-5", "A4 Paper, 5 reams", "ورق A4، 5 رزم", "physical", "95.00", 500, False),
+            ("CHR-ERG", "Ergonomic Office Chair", "كرسي مكتب مريح", "physical", "850.00", 30, False),
+            ("TNR-BLK", "Black Toner Cartridge", "خرطوشة حبر سوداء", "physical", "310.00", 80, False),
+            ("WBD-120", "Whiteboard 120cm", "سبورة بيضاء 120 سم", "physical", "220.00", 15, False),
+            ("SVC-INSTALL", "Furniture Installation", "تركيب الأثاث", "service", "150.00", None, False),
         ],
         "recommendations": [
             ("CHR-ERG", "SVC-INSTALL", "Have it assembled on site"),
@@ -188,10 +188,11 @@ class Command(BaseCommand):
         store.save()
         with tenant_context(store):
             products = {}
-            for sku, name, kind, price, stock, is_addon in spec["products"]:
+            for sku, name, name_ar, kind, price, stock, is_addon in spec["products"]:
                 products[sku] = Product.objects.create(
                     sku=sku,
                     name=name,
+                    name_ar=name_ar,
                     kind=kind,
                     price=Decimal(price),
                     track_stock=stock is not None,

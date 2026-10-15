@@ -364,3 +364,13 @@ def test_invoice_endpoint_reads_lines_back_from_the_signed_xml(store, django_cap
     assert payload["buyer"]["address"]["building_number"] == BILLING["building_number"]
     assert payload["seller"]["vat_number"] == store.vat_number
     assert payload["order_number"].startswith("ORD-")
+
+
+def test_invoice_lines_carry_the_arabic_name(store):
+    order = make_order(store)
+    OrderLine.objects.filter(order=order).update(name_ar="عود رويال")
+    invoice, _ = services.issue_invoice(order)
+    names = [line.find("cac:Item/cbc:Name", NS).text for line in parsed(invoice).findall("cac:InvoiceLine", NS)]
+    assert names[0] == "Oud Royale | عود رويال"
+    assert names[-1] == "Shipping | الشحن"
+    assert verify_signed_invoice(invoice.signed_xml) == (True, "")

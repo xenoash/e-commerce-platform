@@ -35,19 +35,24 @@ def split_by_quantity(quantity, net, vat):
     return [(quantity - 1, unit, bulk_net, bulk_vat), (1, rest_net, rest_net, rest_vat)]
 
 
+def bilingual(name, name_ar):
+    return f"{name} | {name_ar}" if name_ar else name
+
+
 def invoice_lines(order):
     lines = []
     for line in order.lines.all():
+        name = bilingual(line.name, line.name_ar)
         for quantity, unit_price, net, vat in split_by_quantity(line.quantity, line.net, line.vat):
             lines.append(
                 InvoiceLine(
-                    name=line.name, quantity=quantity, unit_price=unit_price, net=net, vat=vat, vat_rate=line.vat_rate
+                    name=name, quantity=quantity, unit_price=unit_price, net=net, vat=vat, vat_rate=line.vat_rate
                 )
             )
     if order.shipping_net or order.shipping_vat:
         lines.append(
             InvoiceLine(
-                name="Shipping",
+                name=bilingual("Shipping", "الشحن"),
                 quantity=1,
                 unit_price=order.shipping_net,
                 net=order.shipping_net,

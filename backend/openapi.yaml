@@ -1582,8 +1582,13 @@ components:
           type: string
         detail:
           type: string
+        data:
+          type: object
+          additionalProperties: {}
+          description: Values behind the reason, for example remaining or allowed_cities.
       required:
       - code
+      - data
       - detail
     CreatedCart:
       type: object
@@ -2074,6 +2079,8 @@ components:
           type: string
         name:
           type: string
+        name_ar:
+          type: string
         quantity:
           type: integer
         unit_price:
@@ -2104,6 +2111,7 @@ components:
       - discount
       - id
       - name
+      - name_ar
       - net
       - product_id
       - quantity
@@ -2273,6 +2281,9 @@ components:
           type: string
         name:
           type: string
+        name_ar:
+          type: string
+          description: Arabic name, when the store provides one.
         description:
           type: string
         kind:
@@ -2300,6 +2311,7 @@ components:
       - kind
       - max_per_order
       - name
+      - name_ar
       - price
       - sku
       - stock_level
@@ -2333,6 +2345,8 @@ components:
           type: string
         name:
           type: string
+        name_ar:
+          type: string
         kind:
           type: string
         image_url:
@@ -2342,6 +2356,7 @@ components:
       - image_url
       - kind
       - name
+      - name_ar
       - sku
     Readiness:
       type: object
@@ -2542,6 +2557,8 @@ components:
         item_id:
           type: string
           format: uuid
+        available:
+          type: integer
         previous_price:
           type: string
           format: decimal

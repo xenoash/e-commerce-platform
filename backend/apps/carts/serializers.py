@@ -71,6 +71,7 @@ class ProductRefSerializer(serializers.Serializer):
     id = serializers.UUIDField()
     sku = serializers.CharField()
     name = serializers.CharField()
+    name_ar = serializers.CharField(allow_blank=True)
     kind = serializers.CharField()
     image_url = serializers.CharField(allow_blank=True)
 
@@ -91,6 +92,7 @@ class CartItemOutSerializer(serializers.Serializer):
 class CouponReasonSerializer(serializers.Serializer):
     code = serializers.CharField()
     detail = serializers.CharField()
+    data = serializers.DictField(help_text="Values behind the reason, for example remaining or allowed_cities.")
 
 
 class CartCouponSerializer(serializers.Serializer):
@@ -138,6 +140,7 @@ class WarningSerializer(serializers.Serializer):
     code = serializers.CharField()
     detail = serializers.CharField()
     item_id = serializers.UUIDField(required=False)
+    available = serializers.IntegerField(required=False)
     previous_price = serializers.DecimalField(required=False, **MONEY)
     current_price = serializers.DecimalField(required=False, **MONEY)
     reason = serializers.CharField(required=False)
@@ -186,7 +189,9 @@ def cart_payload(view):
             "code": view.coupon.coupon.code,
             "description": view.coupon.coupon.description,
             "applicable": view.coupon.applicable,
-            "reason": {"code": str(problem.code), "detail": problem.detail or ""} if problem else None,
+            "reason": {"code": str(problem.code), "detail": problem.detail or "", "data": problem.extra}
+            if problem
+            else None,
             "discount": priced.discount,
         }
     payment_method = None
@@ -210,6 +215,7 @@ def cart_payload(view):
                     "id": item.product.pk,
                     "sku": item.product.sku,
                     "name": item.product.name,
+                    "name_ar": item.product.name_ar,
                     "kind": item.product.kind,
                     "image_url": item.product.image_url,
                 },

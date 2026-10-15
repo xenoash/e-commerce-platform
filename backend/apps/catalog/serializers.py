@@ -7,6 +7,7 @@ class ProductSerializer(serializers.Serializer):
     id = serializers.UUIDField()
     sku = serializers.CharField()
     name = serializers.CharField()
+    name_ar = serializers.CharField(allow_blank=True, help_text="Arabic name, when the store provides one.")
     description = serializers.CharField(allow_blank=True)
     kind = serializers.CharField()
     price = serializers.DecimalField(**MONEY, help_text="In the store's price basis (see GET /store).")
@@ -21,6 +22,7 @@ def product_payload(product):
         "id": product.pk,
         "sku": product.sku,
         "name": product.name,
+        "name_ar": product.name_ar,
         "description": product.description,
         "kind": product.kind,
         "price": product.price,
