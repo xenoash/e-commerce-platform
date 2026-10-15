@@ -50,7 +50,7 @@ class ApplyCouponSerializer(serializers.Serializer):
     code = serializers.CharField(max_length=40)
 
 
-class PaymentMethodInputSerializer(serializers.Serializer):
+class PaymentMethodChoiceSerializer(serializers.Serializer):
     method = serializers.ChoiceField(choices=StorePaymentMethod.Method.choices)
 
 

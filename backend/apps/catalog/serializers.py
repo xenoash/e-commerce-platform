@@ -29,3 +29,9 @@ def product_payload(product):
         "max_per_order": product.max_per_order,
         "image_url": product.image_url,
     }
+
+
+class ProductPageSerializer(serializers.Serializer):
+    next = serializers.URLField(allow_null=True, help_text="Absolute URL of the next page, or null.")
+    previous = serializers.URLField(allow_null=True)
+    results = ProductSerializer(many=True)

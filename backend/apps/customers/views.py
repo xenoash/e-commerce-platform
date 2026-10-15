@@ -15,7 +15,7 @@ from .tokens import issue_token
 TIMING_SAFE_HASH = make_password("timing-safe-placeholder")
 
 
-class TokenRequestSerializer(serializers.Serializer):
+class SignInSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField(max_length=128, trim_whitespace=False)
 
@@ -57,12 +57,12 @@ class TokenView(APIView):
     @extend_schema(
         operation_id="createToken",
         summary="Sign in and get a store-scoped bearer token",
-        request=TokenRequestSerializer,
+        request=SignInSerializer,
         responses={201: TokenResponseSerializer, 401: problem("Wrong email or password for this store.")},
         tags=["Auth"],
     )
     def post(self, request):
-        serializer = TokenRequestSerializer(data=request.data)
+        serializer = SignInSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         customer = Customer.objects.filter(email__iexact=serializer.validated_data["email"]).first()
         password = serializer.validated_data["password"]

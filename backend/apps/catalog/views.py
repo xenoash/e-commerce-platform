@@ -7,7 +7,7 @@ from apps.common.errors import ErrorCode, Problem
 from apps.common.openapi import problem
 
 from .models import Product
-from .serializers import ProductSerializer, product_payload
+from .serializers import ProductPageSerializer, ProductSerializer, product_payload
 
 
 class ProductCursorPagination(CursorPagination):
@@ -29,7 +29,7 @@ class ProductListView(APIView):
             OpenApiParameter("cursor", str, OpenApiParameter.QUERY, required=False),
             OpenApiParameter("limit", int, OpenApiParameter.QUERY, required=False),
         ],
-        responses={200: ProductSerializer(many=True)},
+        responses={200: ProductPageSerializer},
         tags=["Catalogue"],
     )
     def get(self, request):

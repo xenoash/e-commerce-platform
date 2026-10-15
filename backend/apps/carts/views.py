@@ -17,7 +17,7 @@ from .serializers import (
     CartSerializer,
     CheckoutSerializer,
     CreatedCartSerializer,
-    PaymentMethodInputSerializer,
+    PaymentMethodChoiceSerializer,
     UpdateItemSerializer,
     cart_payload,
 )
@@ -180,7 +180,7 @@ class CartPaymentMethodView(APIView):
         operation_id="setPaymentMethod",
         summary="Choose how to pay (the card token is sent at checkout, never stored on the cart)",
         parameters=[CART_TOKEN_HEADER, IF_MATCH_HEADER],
-        request=PaymentMethodInputSerializer,
+        request=PaymentMethodChoiceSerializer,
         responses={
             200: CartSerializer,
             422: problem("Method not offered or not allowed for this customer."),
@@ -189,7 +189,7 @@ class CartPaymentMethodView(APIView):
         tags=["Carts"],
     )
     def put(self, request, cart_id):
-        data = validated(PaymentMethodInputSerializer, request)
+        data = validated(PaymentMethodChoiceSerializer, request)
         return mutate(request, cart_id, lambda cart: services.set_payment_method(cart, data["method"]))
 
 

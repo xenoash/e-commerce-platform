@@ -22,7 +22,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TokenRequestRequest'
+              $ref: '#/components/schemas/SignInRequest'
         required: true
       security:
       - {}
@@ -613,7 +613,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PaymentMethodInputRequest'
+              $ref: '#/components/schemas/PaymentMethodChoiceRequest'
         required: true
       security:
       - customerToken: []
@@ -1000,9 +1000,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Product'
+                $ref: '#/components/schemas/ProductPage'
           description: ''
   /api/v1/products/{product_id}:
     get:
@@ -2101,7 +2099,7 @@ components:
       - gateway
       - method
       - requires_token
-    PaymentMethodInputRequest:
+    PaymentMethodChoiceRequest:
       type: object
       properties:
         method:
@@ -2184,6 +2182,26 @@ components:
       - price
       - sku
       - stock_level
+    ProductPage:
+      type: object
+      properties:
+        next:
+          type: string
+          format: uri
+          nullable: true
+          description: Absolute URL of the next page, or null.
+        previous:
+          type: string
+          format: uri
+          nullable: true
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Product'
+      required:
+      - next
+      - previous
+      - results
     ProductRef:
       type: object
       properties:
@@ -2216,6 +2234,20 @@ components:
       required:
       - missing
       - ready
+    SignInRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+        password:
+          type: string
+          minLength: 1
+          maxLength: 128
+      required:
+      - email
+      - password
     Store:
       type: object
       properties:
@@ -2317,20 +2349,6 @@ components:
       description: |-
         * `product` - product
         * `message` - message
-    TokenRequestRequest:
-      type: object
-      properties:
-        email:
-          type: string
-          format: email
-          minLength: 1
-        password:
-          type: string
-          minLength: 1
-          maxLength: 128
-      required:
-      - email
-      - password
     TokenResponse:
       type: object
       properties:
