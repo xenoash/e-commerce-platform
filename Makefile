@@ -16,7 +16,7 @@ reset:
 	docker compose exec api python manage.py seed_demo --reset
 
 demo:
-	cd backend && uv run python scripts/demo.py --base-url http://localhost:8100
+	docker compose exec api python scripts/demo.py --base-url http://localhost:8000
 
 test:
 	cd backend && uv run pytest -n auto --cov --cov-report=term
@@ -29,7 +29,7 @@ schema:
 	cd web && npm run api:types
 
 web-check:
-	cd web && npm run typecheck && npm run lint && npm test && npm run build
+	cd web && npm ci && npm run typecheck && npm run lint && npm test && npm run build
 
 zatca-check:
 	docker compose exec api python manage.py zatca_compliance_check

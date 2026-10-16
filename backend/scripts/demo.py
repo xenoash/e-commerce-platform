@@ -4,6 +4,7 @@ import re
 import sys
 import time
 import uuid
+from urllib.parse import urlsplit, urlunsplit
 
 import requests
 
@@ -36,8 +37,14 @@ BILLING = {
 
 class Demo:
     def __init__(self, base_url):
-        self.base = base_url.rstrip("/") + "/api/v1"
+        self.root = base_url.rstrip("/")
+        self.base = self.root + "/api/v1"
         self.failures = 0
+
+    def reachable(self, url):
+        root = urlsplit(self.root)
+        parts = urlsplit(url)
+        return urlunsplit((root.scheme, root.netloc, parts.path, parts.query, parts.fragment))
 
     def call(self, method, path, store, *, token=None, cart_token=None, json=None, headers=None):
         merged = {"X-Store": store, **(headers or {})}
@@ -166,7 +173,7 @@ class Demo:
             "retrying with the same Idempotency-Key replays the same order",
             replay.json()["id"] == order["id"] and replay.headers.get("Idempotent-Replayed") == "true",
         )
-        challenge = order["payment"]["next_action"]["url"]
+        challenge = self.reachable(order["payment"]["next_action"]["url"])
         requests.post(challenge, data={"outcome": "approve"}, allow_redirects=False, timeout=15)
         confirmed = self.call("POST", f"/orders/{order['id']}/payment/confirm", B2C, cart_token=cart_token).json()
         self.wait_for_invoice(order["id"], B2C, cart_token=cart_token)

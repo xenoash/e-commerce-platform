@@ -10,11 +10,18 @@ orders and ZATCA Phase 2 e-invoicing. The backend is Django 6.1 and the demo sto
 
 ## Quick start
 
+You need Docker with Compose v2 and `make`. Ports 5180, 8100, 55432 and 56379 must be free.
+
 ```bash
-make up            # Postgres 18, Redis 7, API, Celery worker and beat, storefront
-make seed          # two demo stores, products, coupons, customers, e-invoicing devices
-make demo          # end-to-end walkthrough against the running API
+git clone https://github.com/xenoash/e-commerce-platform.git
+cd e-commerce-platform
+make up            # builds and starts Postgres 18, Redis 7, the API, Celery worker and beat, and the storefront
+make seed          # two demo stores, products, coupons, customers and e-invoicing devices
+make demo          # end-to-end walkthrough against the running API, inside the API container
 ```
+
+The first `make up` builds the images and takes a few minutes. `make down` stops everything; `docker compose down -v`
+also deletes the data.
 
 | What | Where |
 |---|---|
@@ -277,11 +284,14 @@ Money is always a decimal string. Details are in [docs/API.md](docs/API.md).
 
 ## Testing
 
+Running the tests on your machine also needs [uv](https://docs.astral.sh/uv/) (it fetches Python 3.14 itself) and
+Node 22. The backend tests use the stack's Postgres on port 55432, so run `make up` first.
+
 ```bash
 make test          # pytest on real Postgres as the restricted app role
 make lint          # ruff
-make web-check     # storefront typecheck, lint, tests, build
-make zatca-check   # validate a simplified and a standard invoice against ZATCA's developer portal
+make web-check     # installs the storefront's packages, then typecheck, lint, tests and build
+make zatca-check   # runs in the API container; needs internet to reach ZATCA's developer portal
 ```
 
 The suite covers:

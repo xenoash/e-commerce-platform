@@ -94,6 +94,8 @@ When the response has `payment.next_action`, redirect the shopper there (3-D Sec
 
 ## Walkthrough
 
+Against a freshly seeded stack (`make up && make seed`). Needs `curl`, `jq` and `uuidgen`.
+
 ```bash
 API=http://localhost:8100/api/v1
 S='X-Store: oud-and-amber'
@@ -119,8 +121,13 @@ ORDER=$(curl -s -X POST $API/carts/$ID/checkout -H "$S" -H "$C" -H 'Content-Type
   -H "Idempotency-Key: $(uuidgen)" -d '{"payment_token": "tok_success", "expected_total": "400.00"}')
 echo $ORDER | jq '{number, status, payment: .payment.status}'
 
-curl -s $API/orders/$(echo $ORDER | jq -r .id)/invoice -H "$S" -H "$C" | jq '{number, kind, status, icv}'
+ORDER_ID=$(echo $ORDER | jq -r .id)
+until curl -sf $API/orders/$ORDER_ID/invoice -H "$S" -H "$C" -o /dev/null; do sleep 1; done
+curl -s $API/orders/$ORDER_ID/invoice -H "$S" -H "$C" | jq '{number, kind, status, icv}'
 ```
+
+The worker issues the invoice a moment after checkout, so the walkthrough waits until the invoice endpoint stops
+returning `409 INVOICE_NOT_READY`.
 
 Sandbox tokens for `fakepay`:
 
